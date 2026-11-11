@@ -30,10 +30,9 @@
         <span>Digital Book Library &bull; Rashtrasant Tukadoji Maharaj Nagpur University</span>
       </div>
       <div class="notice-links">
-        <div class="server-pill" id="serverStatusPill" onclick="DigiApp.openServerModal()" title="Click to configure backend connection (Java Server / Cloud / Standalone)">
+        <div class="server-pill" id="serverStatusPill" style="cursor:default;" title="Digital Library System Status">
           <div class="status-dot" id="serverStatusDot"></div>
-          <span id="serverStatusText">Detecting Server...</span>
-          <span style="font-size:0.7rem; opacity:0.8;">&#9881;</span>
+          <span id="serverStatusText">Online Archive</span>
         </div>
       </div>
     </div>
@@ -80,8 +79,7 @@
         <ul class="nav-links">
           <li><a href="#" class="nav-btn active" onclick="DigiApp.resetFilters()"><span>&#128218;</span> Browse Catalogue</a></li>
           <li><a href="#aboutDepartment" class="nav-btn"><span>&#127963;</span> Department Archive</a></li>
-          <li><button class="nav-btn" onclick="DigiAdmin.openAdminModal()"><span>&#128228;</span> Admin / Add Book</button></li>
-          <li><button class="nav-btn" onclick="DigiApp.openServerModal()"><span>&#9881;</span> Server Options</button></li>
+          <li><button class="nav-btn" onclick="DigiAdmin.openAdminModal()"><span>&#128274;</span> Librarian Portal</button></li>
         </ul>
 
         <div class="nav-auth-section" id="userAuthStatus">
@@ -450,194 +448,216 @@
   </div>
 
   <!-- ==========================================================================
-       MODAL 5: ADMIN & CATALOGUE MANAGEMENT / BOOK UPLOADER
-       Features: Add PDF/DOC/DOCX, update data/books.json, export for GitHub
+       MODAL 5: LIBRARIAN & REPOSITORY ADMINISTRATION (PASSPHRASE PROTECTED)
+       Features: Add PDF/DOC/DOCX, update data/books.json, manage server & Vercel storage
        ========================================================================== -->
   <div class="modal-overlay" id="adminModal">
     <div class="modal-card admin-card">
       <div class="modal-header">
         <div class="modal-title">
-          <span>&#128228;</span> Library Administration &amp; New Book Ingestion
+          <span>&#128274;</span> Librarian &amp; Repository Administration
         </div>
         <button class="modal-close-btn" onclick="DigiAdmin.closeAdminModal()">&times;</button>
       </div>
 
       <div class="modal-body">
         
-        <div class="admin-tabs">
-          <button class="admin-tab-btn active" id="tabBtnAdd" onclick="document.getElementById('adminTabAdd').style.display='block'; document.getElementById('adminTabList').style.display='none'; this.classList.add('active'); document.getElementById('tabBtnList').classList.remove('active');">
-            Add New Manuscript
-          </button>
-          <button class="admin-tab-btn" id="tabBtnList" onclick="document.getElementById('adminTabAdd').style.display='none'; document.getElementById('adminTabList').style.display='block'; this.classList.add('active'); document.getElementById('tabBtnAdd').classList.remove('active'); DigiAdmin.renderBookList();">
-            Manage Catalogue
-          </button>
-        </div>
-
-        <!-- Tab 1: Add New Book -->
-        <div id="adminTabAdd">
-          
-          <!-- Dropzone -->
-          <div class="dropzone" id="uploadDropzone">
-            <div class="dropzone-icon">&#128193;</div>
-            <div class="dropzone-title">Drag &amp; Drop Research File or Click to Browse</div>
-            <div class="dropzone-formats">Accepted formats: PDF (.pdf), Word (.docx, .doc) &bull; Max 50 MB</div>
-            <input type="file" id="adminFileInput" accept=".pdf,.docx,.doc" style="display:none;">
+        <!-- Passphrase Login Screen (shown when not authenticated) -->
+        <div id="adminLoginView" style="text-align:center; padding:32px 18px;">
+          <div style="font-size:3rem; color:var(--color-gold); margin-bottom:12px;">&#128274;</div>
+          <h3 style="font-family:var(--font-heading); color:var(--color-primary-dark); font-size:1.35rem; margin-bottom:8px;">
+            Librarian &amp; Department Administration
+          </h3>
+          <p style="color:var(--color-text-muted); font-size:0.92rem; max-width:440px; margin:0 auto 22px auto; line-height:1.5;">
+            Access to manuscript ingestion, catalogue updates, and server storage configuration is restricted to authorized faculty and librarians.
+          </p>
+          <div style="max-width:320px; margin:0 auto 16px auto;">
+            <input type="password" id="adminPassInput" class="form-control" placeholder="Enter Admin Passphrase..." style="text-align:center; font-size:1.1rem; letter-spacing:2px;" onkeydown="if(event.key==='Enter') DigiAdmin.loginWithPassphrase();">
+            <div id="adminLoginError" style="color:#C0392B; font-size:0.84rem; margin-top:6px; font-weight:600;"></div>
           </div>
-
-          <!-- Metadata Form -->
-          <form id="addBookForm" onsubmit="DigiAdmin.submitBookForm(event)">
-            <div class="form-grid">
-              
-              <div class="form-group-full">
-                <label class="form-label" for="bookTitleInput">Manuscript / Book Title *</label>
-                <input type="text" id="bookTitleInput" class="form-control" placeholder="e.g. Megalithic Remains of Mahurjhari" required>
-              </div>
-
-              <div>
-                <label class="form-label" for="bookAuthorInput">Author / Research Body *</label>
-                <input type="text" id="bookAuthorInput" class="form-control" placeholder="e.g. Dr. S. B. Deo" required>
-              </div>
-
-              <div>
-                <label class="form-label" for="bookCategoryInput">Subject Category *</label>
-                <select id="bookCategoryInput" class="form-control">
-                  <option value="Archaeology & Excavations">Archaeology & Excavations</option>
-                  <option value="Ancient Indian History">Ancient Indian History</option>
-                  <option value="Epigraphy & Inscriptions">Epigraphy & Inscriptions</option>
-                  <option value="Numismatics & Ancient Coins">Numismatics & Ancient Coins</option>
-                  <option value="Temple Architecture & Iconography">Temple Architecture & Iconography</option>
-                  <option value="Prehistory & Indus Valley">Prehistory & Indus Valley</option>
-                  <option value="Heritage of Vidarbha & Central India">Heritage of Vidarbha & Central India</option>
-                  <option value="Sanskrit & Manuscripts">Sanskrit & Manuscripts</option>
-                </select>
-              </div>
-
-              <div>
-                <label class="form-label" for="bookEraInput">Historical Period / Era</label>
-                <input type="text" id="bookEraInput" class="form-control" placeholder="e.g. Iron Age (c. 1000 BCE)">
-              </div>
-
-              <div>
-                <label class="form-label" for="bookYearInput">Publication Year</label>
-                <input type="text" id="bookYearInput" class="form-control" placeholder="2026">
-              </div>
-
-              <div>
-                <label class="form-label" for="bookFormatInput">Document Format</label>
-                <select id="bookFormatInput" class="form-control">
-                  <option value="pdf">PDF Document (.pdf)</option>
-                  <option value="docx">Word Open XML (.docx)</option>
-                  <option value="doc">Word Legacy / RTF (.doc)</option>
-                </select>
-              </div>
-
-              <div>
-                <label class="form-label" for="bookTagsInput">Tags (Comma Separated)</label>
-                <input type="text" id="bookTagsInput" class="form-control" placeholder="Vidarbha, Pottery, Excavation">
-              </div>
-
-              <div class="form-group-full">
-                <label class="form-label" for="bookDescInput">Academic Abstract / Description</label>
-                <textarea id="bookDescInput" class="form-control" rows="3" placeholder="Provide a brief synopsis of the research contents, excavation site, or historical scope..."></textarea>
-              </div>
-
-            </div>
-
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px;">
-              <button type="button" class="nav-btn" style="color:#C0392B; border:1px solid #E74C3C;" onclick="DigiAdmin.resetDownloadLimit()" title="Reset the 1-download-per-day restriction for testing">
-                &#9851; Reset Daily Download Quota
-              </button>
-              <button type="submit" id="submitBookBtn" class="search-btn">
-                Add Book to Catalogue
-              </button>
-            </div>
-          </form>
-
+          <button class="search-btn" style="margin:0 auto; padding:10px 28px;" onclick="DigiAdmin.loginWithPassphrase()">
+            Unlock Administration Portal
+          </button>
         </div>
 
-        <!-- Tab 2: Manage Catalogue List -->
-        <div id="adminTabList" style="display:none;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-            <p style="font-size:0.86rem; color:var(--color-text-muted);">
-              Current volumes registered in the digital library repository.
-            </p>
-            <button class="nav-btn btn-primary" onclick="DigiAdmin.exportBooksJson()" title="Download updated books.json to commit to GitHub repository">
-              &#128190; Export books.json for GitHub
+        <!-- Authenticated Administration Content View -->
+        <div id="adminContentView" style="display:none;">
+          
+          <div class="admin-tabs">
+            <button class="admin-tab-btn active" id="tabBtnAdd" onclick="DigiAdmin.switchTab('add')">
+              Add New Manuscript
+            </button>
+            <button class="admin-tab-btn" id="tabBtnList" onclick="DigiAdmin.switchTab('list')">
+              Manage Catalogue
+            </button>
+            <button class="admin-tab-btn" id="tabBtnServer" onclick="DigiAdmin.switchTab('server')">
+              Server &amp; Storage Settings
+            </button>
+            <button class="nav-btn" style="margin-left:auto; font-size:0.78rem; padding:4px 10px; color:#C0392B; border:1px solid #E74C3C;" onclick="DigiAdmin.logoutAdmin()" title="Lock administration portal">
+              &#128274; Lock / Logout
             </button>
           </div>
-          
-          <div class="admin-table-wrapper">
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Title</th>
-                  <th>Author</th>
-                  <th>Category</th>
-                  <th>Format</th>
-                  <th>Downloads</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="adminBookTableBody">
-                <!-- Rendered by admin.js -->
-              </tbody>
-            </table>
+
+          <!-- Tab 1: Add New Book -->
+          <div id="adminTabAdd">
+            
+            <!-- Dropzone -->
+            <div class="dropzone" id="uploadDropzone">
+              <div class="dropzone-icon">&#128193;</div>
+              <div class="dropzone-title">Drag &amp; Drop Research File or Click to Browse</div>
+              <div class="dropzone-formats">Accepted formats: PDF (.pdf), Word (.docx, .doc) &bull; Max 50 MB</div>
+              <input type="file" id="adminFileInput" accept=".pdf,.docx,.doc" style="display:none;">
+            </div>
+
+            <!-- Metadata Form -->
+            <form id="addBookForm" onsubmit="DigiAdmin.submitBookForm(event)">
+              <div class="form-grid">
+                
+                <div class="form-group-full">
+                  <label class="form-label" for="bookTitleInput">Manuscript / Book Title *</label>
+                  <input type="text" id="bookTitleInput" class="form-control" placeholder="e.g. Megalithic Remains of Mahurjhari" required>
+                </div>
+
+                <div>
+                  <label class="form-label" for="bookAuthorInput">Author / Research Body *</label>
+                  <input type="text" id="bookAuthorInput" class="form-control" placeholder="e.g. Dr. S. B. Deo" required>
+                </div>
+
+                <div>
+                  <label class="form-label" for="bookCategoryInput">Subject Category *</label>
+                  <select id="bookCategoryInput" class="form-control">
+                    <option value="Archaeology & Excavations">Archaeology & Excavations</option>
+                    <option value="Ancient Indian History">Ancient Indian History</option>
+                    <option value="Epigraphy & Inscriptions">Epigraphy & Inscriptions</option>
+                    <option value="Numismatics & Ancient Coins">Numismatics & Ancient Coins</option>
+                    <option value="Temple Architecture & Iconography">Temple Architecture & Iconography</option>
+                    <option value="Prehistory & Indus Valley">Prehistory & Indus Valley</option>
+                    <option value="Heritage of Vidarbha & Central India">Heritage of Vidarbha & Central India</option>
+                    <option value="Sanskrit & Manuscripts">Sanskrit & Manuscripts</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="form-label" for="bookEraInput">Historical Period / Era</label>
+                  <input type="text" id="bookEraInput" class="form-control" placeholder="e.g. Iron Age (c. 1000 BCE)">
+                </div>
+
+                <div>
+                  <label class="form-label" for="bookYearInput">Publication Year</label>
+                  <input type="text" id="bookYearInput" class="form-control" placeholder="2026">
+                </div>
+
+                <div>
+                  <label class="form-label" for="bookFormatInput">Document Format</label>
+                  <select id="bookFormatInput" class="form-control">
+                    <option value="pdf">PDF Document (.pdf)</option>
+                    <option value="docx">Word Open XML (.docx)</option>
+                    <option value="doc">Word Legacy / RTF (.doc)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="form-label" for="bookTagsInput">Tags (Comma Separated)</label>
+                  <input type="text" id="bookTagsInput" class="form-control" placeholder="Vidarbha, Pottery, Excavation">
+                </div>
+
+                <div class="form-group-full">
+                  <label class="form-label" for="bookDescInput">Academic Abstract / Description</label>
+                  <textarea id="bookDescInput" class="form-control" rows="3" placeholder="Provide a brief synopsis of the research contents, excavation site, or historical scope..."></textarea>
+                </div>
+
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding-top:14px; border-top:1px solid var(--color-border);">
+                <button type="button" class="nav-btn" style="color:#C0392B; border:1px solid #E74C3C;" onclick="DigiAdmin.resetDownloadLimit()" title="Reset the 1-download-per-day restriction for testing">
+                  &#9851; Reset Daily Download Quota
+                </button>
+                <button type="submit" id="submitBookBtn" class="search-btn">
+                  Add Book to Catalogue
+                </button>
+              </div>
+            </form>
+
           </div>
-        </div>
 
-      </div>
-    </div>
-  </div>
-
-  <!-- ==========================================================================
-       MODAL 6: FREE SERVER ENVIRONMENT CONNECTOR
-       Features: Switch between Local Java Server, Render/Vercel/Railway Free Tier
-       ========================================================================== -->
-  <div class="modal-overlay" id="serverModal">
-    <div class="modal-card">
-      <div class="modal-header">
-        <div class="modal-title">
-          <span>&#9881;</span> Free Server Environment &amp; Hosting Setup
-        </div>
-        <button class="modal-close-btn" onclick="DigiApp.closeModal('serverModal')">&times;</button>
-      </div>
-
-      <div class="modal-body">
-        <p style="font-size:0.9rem; color:var(--color-text-muted); margin-bottom:14px;">
-          This Digital Library is fully ready for zero-cost hosting and server environments. Choose your deployment configuration:
-        </p>
-
-        <div style="background:var(--color-bg-subtle); border-radius:6px; padding:14px; margin-bottom:16px; font-size:0.86rem;">
-          <strong style="color:var(--color-primary-dark);">&#10004; Option 1: Free GitHub Pages Hosting (Recommended)</strong>
-          <p style="color:#555; margin-top:4px;">
-            Push this repository to GitHub and enable GitHub Pages in Settings &rarr; Pages. All static reading, search, anti-screenshot protection, and OTP simulations run 100% free with unlimited visitors.
-          </p>
-        </div>
-
-        <div style="background:var(--color-bg-subtle); border-radius:6px; padding:14px; margin-bottom:16px; font-size:0.86rem;">
-          <strong style="color:var(--color-primary-dark);">&#10004; Option 2: Vercel Cloud Serverless &amp; Blob Storage (Recommended)</strong>
-          <p style="color:#555; margin-top:4px;">
-            Deploy this repo directly to Vercel. All <code>/api</code> endpoints (OTP verification, Blob upload, and rate-limiting) run serverless. Paste your Vercel URL below to connect:
-          </p>
-          <div style="margin-top:10px;">
-            <label class="form-label" for="customServerInput">Backend API Endpoint URL (Vercel / Cloud Domain)</label>
-            <input type="url" id="customServerInput" class="form-control" placeholder="https://history-archaeology-digilib.vercel.app">
-            <span style="font-size:0.75rem; color:#888; margin-top:4px; display:block;">Example: <code>https://&lt;your-project-name&gt;.vercel.app</code></span>
+          <!-- Tab 2: Manage Catalogue List -->
+          <div id="adminTabList" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+              <p style="font-size:0.86rem; color:var(--color-text-muted);">
+                Current volumes registered in the digital library repository.
+              </p>
+              <button class="nav-btn btn-primary" onclick="DigiAdmin.exportBooksJson()" title="Download updated books.json to commit to GitHub repository">
+                &#128190; Export books.json for GitHub
+              </button>
+            </div>
+            
+            <div class="admin-table-wrapper">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Category</th>
+                    <th>Format</th>
+                    <th>Downloads</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="adminBookTableBody">
+                  <!-- Rendered by admin.js -->
+                </tbody>
+              </table>
+            </div>
           </div>
+
+          <!-- Tab 3: Server & Storage Settings (PROTECTED INSIDE ADMIN PORTAL) -->
+          <div id="adminTabServer" style="display:none;">
+            
+            <div style="background:var(--color-bg-subtle); border-radius:6px; padding:16px; margin-bottom:16px; border:1px solid var(--color-border);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <strong style="color:var(--color-primary-dark); font-size:0.95rem;">Active Backend Connection:</strong>
+                <span id="adminServerStatusInfo" style="font-size:0.88rem;">Checking status...</span>
+              </div>
+              <p style="color:#555; font-size:0.84rem; line-height:1.5;">
+                Configure the backend API server used for email verification OTP, Vercel Blob cloud storage, and daily download enforcement.
+              </p>
+            </div>
+
+            <div style="background:var(--color-bg-subtle); border-radius:6px; padding:16px; margin-bottom:18px; border:1px solid var(--color-border);">
+              <strong style="color:var(--color-primary-dark); font-size:0.92rem;">&#10004; Vercel Serverless &amp; Blob Storage</strong>
+              <p style="color:#555; font-size:0.84rem; margin-top:4px; line-height:1.5;">
+                Enter your live Vercel project domain URL below. All uploads will be stored permanently in Vercel Blob cloud storage with high-speed global CDN delivery.
+              </p>
+              
+              <div style="margin-top:12px;">
+                <label class="form-label" for="adminServerUrlInput">Backend API Endpoint URL</label>
+                <input type="url" id="adminServerUrlInput" class="form-control" placeholder="https://history-archaeology-digilib.vercel.app">
+                <span style="font-size:0.75rem; color:#888; margin-top:4px; display:block;">
+                  Example: <code>https://&lt;your-project-name&gt;.vercel.app</code> or <code>http://localhost:8080</code> for local Java server.
+                </span>
+              </div>
+
+              <div style="margin-top:14px; display:flex; justify-content:flex-end;">
+                <button type="button" id="btnSaveAdminServer" class="search-btn" onclick="DigiAdmin.saveServerSettingsFromAdmin()">
+                  Save &amp; Reconnect
+                </button>
+              </div>
+            </div>
+
+            <div style="background:var(--color-bg-subtle); border-radius:6px; padding:14px; font-size:0.84rem; color:#555; border:1px solid var(--color-border);">
+              <strong style="color:var(--color-primary-dark);">&#128161; Hosting Architecture Tips:</strong>
+              <ul style="margin:8px 0 0 18px; line-height:1.6;">
+                <li><strong>On Vercel:</strong> The app auto-detects its own domain without needing any manual configuration.</li>
+                <li><strong>On Local Computer:</strong> Launch <code>start-server.bat</code> to run the included Java backend on port 8080.</li>
+                <li><strong>On GitHub Pages:</strong> Enter your Vercel URL above so GitHub Pages routes API requests to Vercel.</li>
+              </ul>
+            </div>
+
+          </div>
+
         </div>
 
-        <div style="background:var(--color-bg-subtle); border-radius:6px; padding:14px; margin-bottom:16px; font-size:0.86rem;">
-          <strong style="color:var(--color-primary-dark);">&#10004; Option 3: Local Java Server &amp; Ubooquity Bridge</strong>
-          <p style="color:#555; margin-top:4px;">
-            Run <code>start-server.bat</code> on your local computer or campus LAN server. It launches the included Java backend with real-time file upload, rate-limiting, and Ubooquity integration.
-          </p>
-        </div>
-
-        <div style="display:flex; justify-content:flex-end; gap:10px;">
-          <button class="nav-btn" style="border:1px solid var(--color-border); color:var(--color-text-main);" onclick="DigiApp.closeModal('serverModal')">Cancel</button>
-          <button class="search-btn" onclick="DigiApp.saveServerSettings()">Save &amp; Connect</button>
-        </div>
       </div>
     </div>
   </div>

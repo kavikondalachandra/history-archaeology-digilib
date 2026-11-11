@@ -462,22 +462,9 @@ const DigiApp = (function() {
     modal.classList.add('active');
   }
 
-  // Server Environment Connector Modal
+  // Server Environment Connector - Protected inside Librarian Portal
   function openServerModal() {
-    const modal = document.getElementById('serverModal');
-    if (!modal) return;
-
-    document.getElementById('customServerInput').value = DigiStorage.getServerUrl();
-    modal.classList.add('active');
-  }
-
-  async function saveServerSettings() {
-    const url = document.getElementById('customServerInput').value;
-    await DigiStorage.setServerUrl(url);
-    updateServerIndicator();
-    closeModal('serverModal');
-    loadBooks();
-    DigiSecurity.showToast('Server configuration updated.');
+    DigiAdmin.openAdminModal('server');
   }
 
   function closeModal(modalId) {

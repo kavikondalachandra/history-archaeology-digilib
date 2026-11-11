@@ -1,6 +1,11 @@
 /**
  * DigiLib - Admin & Catalogue Management Portal
  * Department of Ancient Indian History, Culture & Archaeology, RTMNU
+ * Features:
+ *  - Secure in-modal passphrase gate
+ *  - Upload new manuscripts (PDF, DOCX, DOC)
+ *  - Manage catalogue database & export books.json
+ *  - Protected server & storage configuration (Vercel Backend URL)
  */
 
 const DigiAdmin = (function() {
@@ -12,30 +17,138 @@ const DigiAdmin = (function() {
     setupDropzone();
   }
 
-  function checkAdminAuth() {
-    if (isAuthenticatedAdmin) return true;
-    const pass = prompt('Enter Librarian / Department Admin Passphrase:');
-    if (pass === ADMIN_PASS || pass === 'admin') {
-      isAuthenticatedAdmin = true;
-      return true;
-    } else if (pass !== null) {
-      alert('Access Denied: Incorrect passphrase.');
+  function openAdminModal(targetTab) {
+    const modal = document.getElementById('adminModal');
+    if (!modal) return;
+
+    modal.classList.add('active');
+
+    const loginView = document.getElementById('adminLoginView');
+    const contentView = document.getElementById('adminContentView');
+    const passInput = document.getElementById('adminPassInput');
+    const errorEl = document.getElementById('adminLoginError');
+
+    if (errorEl) errorEl.textContent = '';
+
+    if (!isAuthenticatedAdmin) {
+      if (loginView) loginView.style.display = 'block';
+      if (contentView) contentView.style.display = 'none';
+      if (passInput) {
+        passInput.value = '';
+        setTimeout(() => passInput.focus(), 150);
+      }
+    } else {
+      if (loginView) loginView.style.display = 'none';
+      if (contentView) contentView.style.display = 'block';
+      switchTab(targetTab || 'add');
     }
-    return false;
   }
 
-  function openAdminModal() {
-    if (!checkAdminAuth()) return;
-    const modal = document.getElementById('adminModal');
-    if (modal) {
-      modal.classList.add('active');
-      renderBookList();
+  function loginWithPassphrase() {
+    const passInput = document.getElementById('adminPassInput');
+    const errorEl = document.getElementById('adminLoginError');
+    const pass = passInput ? passInput.value.trim() : '';
+
+    if (pass === ADMIN_PASS || pass === 'admin') {
+      isAuthenticatedAdmin = true;
+      if (errorEl) errorEl.textContent = '';
+      const loginView = document.getElementById('adminLoginView');
+      const contentView = document.getElementById('adminContentView');
+      if (loginView) loginView.style.display = 'none';
+      if (contentView) contentView.style.display = 'block';
+      switchTab('add');
+      DigiSecurity.showToast('Librarian administration portal unlocked.');
+    } else {
+      if (errorEl) errorEl.textContent = 'Incorrect passphrase. Access restricted to authorized faculty.';
+      if (passInput) {
+        passInput.value = '';
+        passInput.focus();
+      }
     }
+  }
+
+  function logoutAdmin() {
+    isAuthenticatedAdmin = false;
+    const loginView = document.getElementById('adminLoginView');
+    const contentView = document.getElementById('adminContentView');
+    if (loginView) loginView.style.display = 'block';
+    if (contentView) contentView.style.display = 'none';
+    const passInput = document.getElementById('adminPassInput');
+    if (passInput) passInput.value = '';
+    DigiSecurity.showToast('Librarian portal locked.');
   }
 
   function closeAdminModal() {
     const modal = document.getElementById('adminModal');
     if (modal) modal.classList.remove('active');
+  }
+
+  function switchTab(tabName) {
+    const tabAdd = document.getElementById('adminTabAdd');
+    const tabList = document.getElementById('adminTabList');
+    const tabServer = document.getElementById('adminTabServer');
+
+    const btnAdd = document.getElementById('tabBtnAdd');
+    const btnList = document.getElementById('tabBtnList');
+    const btnServer = document.getElementById('tabBtnServer');
+
+    if (tabAdd) tabAdd.style.display = (tabName === 'add') ? 'block' : 'none';
+    if (tabList) tabList.style.display = (tabName === 'list') ? 'block' : 'none';
+    if (tabServer) tabServer.style.display = (tabName === 'server') ? 'block' : 'none';
+
+    if (btnAdd) btnAdd.classList.toggle('active', tabName === 'add');
+    if (btnList) btnList.classList.toggle('active', tabName === 'list');
+    if (btnServer) btnServer.classList.toggle('active', tabName === 'server');
+
+    if (tabName === 'list') {
+      renderBookList();
+    } else if (tabName === 'server') {
+      populateServerSettings();
+    }
+  }
+
+  function populateServerSettings() {
+    const serverInput = document.getElementById('adminServerUrlInput');
+    if (serverInput) {
+      serverInput.value = DigiStorage.getServerUrl();
+    }
+    const info = DigiStorage.getServerInfo();
+    const statusText = document.getElementById('adminServerStatusInfo');
+    if (statusText) {
+      if (DigiStorage.isConnected()) {
+        const name = (info && info.server) ? info.server : 'Active Server';
+        statusText.innerHTML = `<span style="color:#2ECC71; font-weight:700;">&#10004; Connected:</span> ${name}`;
+      } else {
+        statusText.innerHTML = `<span style="color:#E67E22; font-weight:700;">&#9679; Standalone Web Mode</span> (No external server connected)`;
+      }
+    }
+  }
+
+  async function saveServerSettingsFromAdmin() {
+    const serverInput = document.getElementById('adminServerUrlInput');
+    if (!serverInput) return;
+    const url = serverInput.value.trim();
+
+    const saveBtn = document.getElementById('btnSaveAdminServer');
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Connecting...';
+    }
+
+    try {
+      await DigiStorage.setServerUrl(url);
+      DigiApp.updateServerIndicator();
+      populateServerSettings();
+      await DigiApp.loadBooks();
+      DigiSecurity.showToast('Server settings updated and reconnected successfully.');
+    } catch (err) {
+      alert('Failed to connect to server: ' + err.message);
+    } finally {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save & Reconnect';
+      }
+    }
   }
 
   function setupDropzone() {
@@ -163,9 +276,9 @@ const DigiAdmin = (function() {
     }
 
     try {
-      const res = await DigiStorage.addBook(bookPayload);
+      await DigiStorage.addBook(bookPayload);
       alert('Success! The manuscript has been added to the Digital Library catalogue.');
-      
+
       // Reset form
       document.getElementById('addBookForm').reset();
       stagedFile = null;
@@ -196,7 +309,7 @@ const DigiAdmin = (function() {
         <td>${escapeHtml(b.title)}</td>
         <td>${escapeHtml(b.author)}</td>
         <td><span class="badge-gold">${escapeHtml(b.category)}</span></td>
-        <td><span class="format-badge ${b.format}">${b.format.toUpperCase()}</span></td>
+        <td><span class="format-badge ${b.format}">${(b.format || 'pdf').toUpperCase()}</span></td>
         <td>${b.downloads || 0}</td>
         <td>
           <button class="admin-action-btn delete" onclick="DigiAdmin.deleteBook('${b.id}')" title="Delete Book">&#128465;</button>
@@ -230,7 +343,7 @@ const DigiAdmin = (function() {
   // Reset daily download limit for testing
   function resetDownloadLimit() {
     localStorage.removeItem('digilib_daily_downloads');
-    alert('Daily download counter has been reset! All users can download again.');
+    alert('Daily download counter has been reset! All scholars can download again today.');
     DigiAuth.updateUserUI();
   }
 
@@ -249,6 +362,10 @@ const DigiAdmin = (function() {
     init,
     openAdminModal,
     closeAdminModal,
+    loginWithPassphrase,
+    logoutAdmin,
+    switchTab,
+    saveServerSettingsFromAdmin,
     submitBookForm,
     renderBookList,
     deleteBook,

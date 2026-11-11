@@ -9,6 +9,8 @@ echo "==========================================================================
 echo "  Department of Ancient Indian History, Culture & Archaeology"
 echo "  Rashtrasant Tukadoji Maharaj Nagpur University"
 echo "  Historical & Archaeological Digital Research Library"
+echo "  Built around Ubooquity application platform - Tom Vaemendis"
+echo "  Concept & Design by K.S.Chandra, 2026, kavikondalaschandra@gmail.com"
 echo "=============================================================================="
 
 if ! command -v java &> /dev/null; then

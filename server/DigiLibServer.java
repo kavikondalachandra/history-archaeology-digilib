@@ -78,6 +78,7 @@ public class DigiLibServer {
         System.out.println("  Department of Ancient Indian History, Culture & Archaeology     ");
         System.out.println("  Rashtrasant Tukadoji Maharaj Nagpur University                  ");
         System.out.println("  Digital Book Library Server Started Successfully!               ");
+        System.out.println("  Built around Ubooquity application platform - Tom Vaemendis     ");
         System.out.println("==================================================================");
         System.out.println("  Local URL:  http://localhost:" + port);
         System.out.println("  Admin Auth: Server-backed OTP & Daily Download Rate Limiter active");

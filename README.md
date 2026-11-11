@@ -171,6 +171,7 @@ DigiLib/
 
 ## 🏛️ Credits & Copyright
 
+- **Platform Architecture**: Built around Ubooquity application platform - Tom Vaemendis
 - **Concept & Design**: K.S.Chandra, 2026 (`kavikondalaschandra@gmail.com`)
 - **Institution**: Department of Ancient Indian History, Culture & Archaeology, Rashtrasant Tukadoji Maharaj Nagpur University
 - **Disclaimer**: *All the books in this repository have been sourced and downloaded from various free and open source web sites. Due citations and acknowledgements will be given to respective Authors and Publishers.*

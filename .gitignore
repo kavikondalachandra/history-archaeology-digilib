@@ -1,0 +1,22 @@
+# Operating System
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Node / Package managers
+node_modules/
+npm-debug.log*
+
+# Server temporary files
+*.log
+server/*.class
+
+# Keep data and assets
+!data/
+!assets/

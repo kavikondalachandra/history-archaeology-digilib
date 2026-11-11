@@ -1,0 +1,518 @@
+/**
+ * DigiLib - Core Application Controller
+ * Department of Ancient Indian History, Culture & Archaeology
+ * Rashtrasant Tukadoji Maharaj Nagpur University
+ * Concept & Design by K.S.Chandra, 2026, kavikondalaschandra@gmail.com
+ */
+
+const DigiApp = (function() {
+  let allBooks = [];
+  let currentCategory = 'all';
+  let searchQuery = '';
+  let formatFilter = 'all';
+  let sortBy = 'popular';
+  let pendingBookToDownload = null;
+
+  async function init() {
+    // 1. Initialize Sub-systems
+    DigiSecurity.init();
+    await DigiStorage.init();
+    DigiAuth.init();
+    DigiAdmin.init();
+
+    // 2. Update Server connection indicator
+    updateServerIndicator();
+
+    // 3. Load books and render
+    await loadBooks();
+
+    // 4. Setup Event Listeners
+    setupSearch();
+    setupModals();
+  }
+
+  // Update Top Bar Server Indicator
+  function updateServerIndicator() {
+    const pill = document.getElementById('serverStatusPill');
+    const dot = document.getElementById('serverStatusDot');
+    const text = document.getElementById('serverStatusText');
+
+    if (!pill || !text) return;
+
+    if (DigiStorage.isConnected()) {
+      dot.className = 'status-dot';
+      text.textContent = 'Java Server Active (Port 8080)';
+    } else {
+      dot.className = 'status-dot cloud';
+      text.textContent = 'GitHub / Cloud Engine';
+    }
+  }
+
+  // Load books from Storage
+  async function loadBooks() {
+    allBooks = await DigiStorage.getBooks();
+    renderCategories();
+    renderBooks();
+    updateStats();
+  }
+
+  // Render Categories Filter Pills
+  function renderCategories() {
+    const container = document.getElementById('categoryScrollContainer');
+    if (!container) return;
+
+    const categoriesMap = { 'all': allBooks.length };
+    for (const b of allBooks) {
+      const cat = b.category || 'General';
+      categoriesMap[cat] = (categoriesMap[cat] || 0) + 1;
+    }
+
+    const categories = Object.keys(categoriesMap);
+
+    container.innerHTML = categories.map(cat => {
+      const label = cat === 'all' ? 'All Collections' : cat;
+      const count = categoriesMap[cat];
+      const isActive = currentCategory === cat ? 'active' : '';
+      return `
+        <button class="cat-pill ${isActive}" onclick="DigiApp.setCategory('${escapeAttr(cat)}')">
+          <span>${escapeHtml(label)}</span>
+          <span class="cat-count">${count}</span>
+        </button>
+      `;
+    }).join('');
+  }
+
+  // Set Category
+  function setCategory(cat) {
+    currentCategory = cat;
+    renderCategories();
+    renderBooks();
+  }
+
+  // Filter and Sort Books
+  function getFilteredBooks() {
+    let filtered = [...allBooks];
+
+    // Category filter
+    if (currentCategory !== 'all') {
+      filtered = filtered.filter(b => b.category === currentCategory);
+    }
+
+    // Format filter
+    if (formatFilter !== 'all') {
+      filtered = filtered.filter(b => (b.format || 'pdf').toLowerCase() === formatFilter);
+    }
+
+    // Search query
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(b => {
+        const titleMatch = (b.title || '').toLowerCase().includes(q);
+        const authorMatch = (b.author || '').toLowerCase().includes(q);
+        const eraMatch = (b.era || '').toLowerCase().includes(q);
+        const descMatch = (b.description || '').toLowerCase().includes(q);
+        const tagsMatch = (b.tags || []).some(t => t.toLowerCase().includes(q));
+        return titleMatch || authorMatch || eraMatch || descMatch || tagsMatch;
+      });
+    }
+
+    // Sorting
+    if (sortBy === 'popular') {
+      filtered.sort((a, b) => (b.reads || 0) - (a.reads || 0));
+    } else if (sortBy === 'title') {
+      filtered.sort((a, b) => a.title.localeCompare(b.title));
+    } else if (sortBy === 'author') {
+      filtered.sort((a, b) => a.author.localeCompare(b.author));
+    } else if (sortBy === 'recent') {
+      filtered.sort((a, b) => (b.id || '').localeCompare(a.id || ''));
+    }
+
+    return filtered;
+  }
+
+  // Render Books Grid
+  function renderBooks() {
+    const grid = document.getElementById('booksGrid');
+    const countEl = document.getElementById('activeResultsCount');
+    if (!grid) return;
+
+    const books = getFilteredBooks();
+    if (countEl) countEl.textContent = `${books.length} Books Found`;
+
+    if (books.length === 0) {
+      grid.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: #FFFFFF; border-radius: var(--radius-md); border: 1px dashed var(--color-border);">
+          <div style="font-size: 3rem; color: var(--color-gold); margin-bottom: 12px;">&#128214;</div>
+          <h3 style="font-family: var(--font-heading); color: var(--color-primary-dark); margin-bottom: 8px;">No Research Volumes Matched</h3>
+          <p style="color: var(--color-text-muted); max-width: 440px; margin: 0 auto 18px auto;">
+            Try adjusting your search terms or selecting a different category filter from the options above.
+          </p>
+          <button onclick="DigiApp.resetFilters()" class="search-btn" style="display:inline-flex; margin:0 auto;">Reset Filters</button>
+        </div>
+      `;
+      return;
+    }
+
+    grid.innerHTML = books.map(book => {
+      const format = (book.format || 'pdf').toLowerCase();
+      const cover = book.coverImage || 'assets/images/covers/cover_wonder_india.svg';
+
+      return `
+        <div class="book-card" id="card-${book.id}">
+          <div class="card-cover-wrapper">
+            <img src="${escapeAttr(cover)}" alt="${escapeAttr(book.title)}" class="card-cover-img" loading="lazy">
+            <div class="card-badges-top">
+              <span class="format-badge ${format}">${format.toUpperCase()}</span>
+              <span class="era-badge">${escapeHtml(book.era || 'Ancient Era')}</span>
+            </div>
+            <div class="cover-overlay-actions">
+              <button class="btn-read-quick" onclick="DigiApp.handleReadClick('${book.id}')">
+                <span>&#128214;</span> Read Online
+              </button>
+              <button class="btn-download-quick" onclick="DigiApp.handleDownloadClick('${book.id}')">
+                <span>&#11015;</span> Download (1/Day)
+              </button>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="card-category-tag">${escapeHtml(book.category || 'General')}</div>
+            <h3 class="card-title" title="${escapeAttr(book.title)}">${escapeHtml(book.title)}</h3>
+            <div class="card-author">
+              <span>&#9997;</span> ${escapeHtml(book.author)}
+            </div>
+            <p class="card-desc">${escapeHtml(book.description || '')}</p>
+
+            <div class="card-meta-row">
+              <span>&#128196; ${book.pages || 100} pages</span>
+              <span>&#128190; ${book.fileSize || '2 MB'}</span>
+              <span>&#128065; ${book.reads || 0} reads</span>
+            </div>
+
+            <div class="card-actions-bar">
+              <button class="btn-card-read" onclick="DigiApp.handleReadClick('${book.id}')">
+                <span>&#128214;</span> Read (Unlimited)
+              </button>
+              <button class="btn-card-download" onclick="DigiApp.handleDownloadClick('${book.id}')" title="Download Document (1 per calendar day)">
+                <span>&#11015;</span> Download
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Update Stats in Hero Banner
+  function updateStats() {
+    const volEl = document.getElementById('statTotalVolumes');
+    const readEl = document.getElementById('statTotalReads');
+    if (volEl) volEl.textContent = allBooks.length;
+    if (readEl) {
+      const totalReads = allBooks.reduce((sum, b) => sum + (b.reads || 0), 0);
+      readEl.textContent = totalReads.toLocaleString();
+    }
+  }
+
+  // Handle "Read Online" Click: Unlimited Online Reading
+  function handleReadClick(bookId) {
+    const book = allBooks.find(b => b.id === bookId);
+    if (!book) return;
+
+    // Check if authenticated by email
+    if (!DigiAuth.isAuthenticated()) {
+      openAuthModal(() => {
+        DigiReader.openBook(book);
+        incrementReadCounter(book);
+      });
+      return;
+    }
+
+    DigiReader.openBook(book);
+    incrementReadCounter(book);
+  }
+
+  function incrementReadCounter(book) {
+    book.reads = (book.reads || 0) + 1;
+    const cardReadEl = document.querySelector(`#card-${book.id} .card-meta-row span:last-child`);
+    if (cardReadEl) cardReadEl.innerHTML = `&#128065; ${book.reads} reads`;
+  }
+
+  // Handle "Download" Click: Strictly 1 Download Per Day Enforcement
+  function handleDownloadClick(bookId) {
+    const book = allBooks.find(b => b.id === bookId);
+    if (!book) return;
+
+    // Must be verified by email
+    if (!DigiAuth.isAuthenticated()) {
+      openAuthModal(() => {
+        handleDownloadClick(bookId);
+      });
+      return;
+    }
+
+    const user = DigiAuth.getUser();
+
+    // Check download quota for today
+    if (!DigiStorage.canDownloadToday(user.email)) {
+      openDownloadLimitModal();
+      return;
+    }
+
+    // Show Confirmation Modal
+    pendingBookToDownload = book;
+    openDownloadConfirmModal(book);
+  }
+
+  // Execute Approved Download
+  async function executeDownload() {
+    if (!pendingBookToDownload) return;
+    const book = pendingBookToDownload;
+    const user = DigiAuth.getUser();
+
+    closeModal('downloadConfirmModal');
+
+    // Trigger download
+    if (DigiStorage.isConnected()) {
+      const downloadUrl = `${DigiStorage.getServerUrl()}/api/books/download?id=${book.id}&email=${encodeURIComponent(user.email)}&token=${user.token || ''}`;
+      window.location.href = downloadUrl;
+    } else {
+      // Direct file download for static mode
+      const a = document.createElement('a');
+      a.href = book.filePath;
+      a.download = `${book.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.${book.format || 'pdf'}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    // Record download
+    DigiStorage.recordDownload(user.email, book.id);
+    book.downloads = (book.downloads || 0) + 1;
+
+    // Update UI
+    DigiAuth.updateUserUI();
+    pendingBookToDownload = null;
+
+    DigiSecurity.showToast('Daily download recorded (1/1). Your next download unlocks tomorrow.');
+  }
+
+  // Search and Filter Setup
+  function setupSearch() {
+    const input = document.getElementById('mainSearchInput');
+    const formatSelect = document.getElementById('searchFormatSelect');
+    const sortSelect = document.getElementById('sortBySelect');
+
+    if (input) {
+      input.addEventListener('input', (e) => {
+        searchQuery = e.target.value.trim();
+        renderBooks();
+      });
+    }
+
+    if (formatSelect) {
+      formatSelect.addEventListener('change', (e) => {
+        formatFilter = e.target.value;
+        renderBooks();
+      });
+    }
+
+    if (sortSelect) {
+      sortSelect.addEventListener('change', (e) => {
+        sortBy = e.target.value;
+        renderBooks();
+      });
+    }
+  }
+
+  function resetFilters() {
+    currentCategory = 'all';
+    searchQuery = '';
+    formatFilter = 'all';
+    sortBy = 'popular';
+
+    const input = document.getElementById('mainSearchInput');
+    const formatSelect = document.getElementById('searchFormatSelect');
+    const sortSelect = document.getElementById('sortBySelect');
+
+    if (input) input.value = '';
+    if (formatSelect) formatSelect.value = 'all';
+    if (sortSelect) sortSelect.value = 'popular';
+
+    renderCategories();
+    renderBooks();
+  }
+
+  // Modal Setup
+  function setupModals() {
+    // Close modals on clicking overlay or close buttons
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          overlay.classList.remove('active');
+        }
+      });
+    });
+
+    document.querySelectorAll('.modal-close-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const modal = btn.closest('.modal-overlay');
+        if (modal) modal.classList.remove('active');
+      });
+    });
+  }
+
+  // Email Authentication Modal
+  let authSuccessCallback = null;
+
+  function openAuthModal(callback) {
+    authSuccessCallback = callback || null;
+    const modal = document.getElementById('authModal');
+    if (!modal) return;
+
+    // Reset auth modal steps
+    document.getElementById('authStepEmail').style.display = 'block';
+    document.getElementById('authStepOtp').style.display = 'none';
+    document.getElementById('authEmailInput').value = '';
+    document.getElementById('authOtpInput').value = '';
+    document.getElementById('demoOtpHint').style.display = 'none';
+
+    modal.classList.add('active');
+  }
+
+  async function handleSendOtp() {
+    const email = document.getElementById('authEmailInput').value;
+    const btn = document.getElementById('btnSendOtp');
+    const errorEl = document.getElementById('authEmailError');
+    errorEl.textContent = '';
+
+    btn.disabled = true;
+    btn.textContent = 'Sending Verification Code...';
+
+    try {
+      const res = await DigiAuth.requestOtp(email);
+      document.getElementById('authStepEmail').style.display = 'none';
+      document.getElementById('authStepOtp').style.display = 'block';
+      document.getElementById('otpTargetEmail').textContent = email;
+
+      // Show Demo OTP box for instant testing
+      if (res.demoOtp) {
+        const hint = document.getElementById('demoOtpHint');
+        document.getElementById('demoOtpCode').textContent = res.demoOtp;
+        hint.style.display = 'block';
+      }
+    } catch (err) {
+      errorEl.textContent = err.message;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Send Verification Code (OTP)';
+    }
+  }
+
+  async function handleVerifyOtp() {
+    const email = document.getElementById('authEmailInput').value;
+    const otp = document.getElementById('authOtpInput').value;
+    const btn = document.getElementById('btnVerifyOtp');
+    const errorEl = document.getElementById('authOtpError');
+    errorEl.textContent = '';
+
+    btn.disabled = true;
+    btn.textContent = 'Verifying...';
+
+    try {
+      await DigiAuth.verifyOtp(email, otp);
+      closeModal('authModal');
+      DigiSecurity.showToast('Email verified successfully! Welcome to the Digital Research Archive.');
+
+      if (typeof authSuccessCallback === 'function') {
+        const cb = authSuccessCallback;
+        authSuccessCallback = null;
+        cb();
+      }
+    } catch (err) {
+      errorEl.textContent = err.message;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Verify & Enter Library';
+    }
+  }
+
+  // Download Limit Reached Modal
+  function openDownloadLimitModal() {
+    const modal = document.getElementById('downloadLimitModal');
+    if (modal) modal.classList.add('active');
+  }
+
+  // Download Confirmation Modal
+  function openDownloadConfirmModal(book) {
+    const modal = document.getElementById('downloadConfirmModal');
+    if (!modal) return;
+
+    document.getElementById('confirmDownloadTitle').textContent = book.title;
+    document.getElementById('confirmDownloadAuthor').textContent = book.author;
+    document.getElementById('confirmDownloadFormat').textContent = (book.format || 'pdf').toUpperCase();
+    document.getElementById('confirmDownloadSize').textContent = book.fileSize || '2 MB';
+
+    modal.classList.add('active');
+  }
+
+  // Server Environment Connector Modal
+  function openServerModal() {
+    const modal = document.getElementById('serverModal');
+    if (!modal) return;
+
+    document.getElementById('customServerInput').value = DigiStorage.getServerUrl();
+    modal.classList.add('active');
+  }
+
+  async function saveServerSettings() {
+    const url = document.getElementById('customServerInput').value;
+    await DigiStorage.setServerUrl(url);
+    updateServerIndicator();
+    closeModal('serverModal');
+    loadBooks();
+    DigiSecurity.showToast('Server configuration updated.');
+  }
+
+  function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.classList.remove('active');
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>'"]/g, tag => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;'
+    }[tag] || tag));
+  }
+
+  function escapeAttr(str) {
+    if (!str) return '';
+    return str.replace(/"/g, '&quot;');
+  }
+
+  return {
+    init,
+    loadBooks,
+    setCategory,
+    resetFilters,
+    handleReadClick,
+    handleDownloadClick,
+    executeDownload,
+    openAuthModal,
+    handleSendOtp,
+    handleVerifyOtp,
+    openServerModal,
+    saveServerSettings,
+    closeModal
+  };
+})();
+
+// Bootstrap on DOM Ready
+document.addEventListener('DOMContentLoaded', () => {
+  DigiApp.init();
+});

@@ -1,0 +1,323 @@
+/* ==========================================================================
+   Historical & Archaeological Digital Research Library - Reader Stylesheet
+   Full-featured in-app PDF, DOC, DOCX reader with anti-copy & screen protection
+   ========================================================================== */
+
+.reader-modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #140A0B;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+.reader-modal.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Reader Top Toolbar */
+.reader-toolbar {
+  background: #1F0D0E;
+  color: #FFFFFF;
+  border-bottom: 2px solid var(--color-gold);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  z-index: 10;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+.reader-book-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: 40%;
+}
+
+.reader-format-badge {
+  background: var(--color-gold);
+  color: #3C0A0A;
+  font-weight: 800;
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.reader-title-text {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Toolbar Controls */
+.reader-controls-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reader-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: var(--transition);
+}
+
+.reader-btn:hover {
+  background: rgba(212, 175, 55, 0.25);
+  border-color: var(--color-gold);
+  color: var(--color-gold-light);
+}
+
+.reader-btn.btn-close {
+  background: #8B1E1E;
+  border-color: #B83535;
+}
+
+.reader-btn.btn-close:hover {
+  background: #C0392B;
+}
+
+.reader-page-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.88rem;
+  color: #E0D2C7;
+}
+
+.reader-page-input {
+  width: 48px;
+  text-align: center;
+  padding: 4px;
+  border-radius: 4px;
+  border: 1px solid var(--color-gold);
+  background: #2D080A;
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+/* Reader Viewport Area */
+.reader-viewport {
+  flex: 1;
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  justify-content: center;
+  padding: 30px 15px;
+  scroll-behavior: smooth;
+}
+
+/* Themes for Reader Viewport */
+.reader-viewport.theme-parchment {
+  background: #2B231D;
+}
+
+.reader-viewport.theme-night {
+  background: #121212;
+}
+
+.reader-viewport.theme-day {
+  background: #4A4A4A;
+}
+
+/* Document Container */
+.reader-document-container {
+  position: relative;
+  max-width: 900px;
+  width: 100%;
+  min-height: 800px;
+  background: #FAF7F2;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  border-radius: 4px;
+  padding: 50px 60px;
+  color: #221815;
+  font-family: var(--font-serif);
+  line-height: 1.8;
+  font-size: 1.05rem;
+  transition: filter 0.2s ease;
+}
+
+.reader-viewport.theme-parchment .reader-document-container {
+  background: #F4EEDD;
+  color: #2D2013;
+  border: 1px solid #D9CBB0;
+}
+
+.reader-viewport.theme-night .reader-document-container {
+  background: #1E1E1E;
+  color: #D6CBC7;
+  border: 1px solid #333333;
+}
+
+.reader-viewport.theme-day .reader-document-container {
+  background: #FFFFFF;
+  color: #111111;
+}
+
+/* PDF Canvas Wrapper */
+.pdf-page-wrapper {
+  margin-bottom: 24px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.2);
+  display: flex;
+  justify-content: center;
+}
+
+.pdf-canvas {
+  max-width: 100%;
+  height: auto !important;
+  display: block;
+}
+
+/* DOCX Styled Content */
+.docx-rendered-content h1 {
+  font-family: var(--font-heading);
+  color: var(--color-primary-dark);
+  font-size: 1.8rem;
+  margin-bottom: 18px;
+  text-align: center;
+  border-bottom: 2px solid var(--color-gold);
+  padding-bottom: 12px;
+}
+
+.reader-viewport.theme-night .docx-rendered-content h1 {
+  color: var(--color-gold-light);
+}
+
+.docx-rendered-content h2 {
+  font-family: var(--font-heading);
+  color: var(--color-lapis);
+  font-size: 1.35rem;
+  margin: 28px 0 12px 0;
+}
+
+.reader-viewport.theme-night .docx-rendered-content h2 {
+  color: #7FB3D5;
+}
+
+.docx-rendered-content p {
+  margin-bottom: 18px;
+  text-align: justify;
+}
+
+/* Dynamic Moving Watermark Overlay */
+#readerWatermarkOverlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.watermark-stamp {
+  position: absolute;
+  color: rgba(139, 30, 30, 0.14);
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: 2px;
+  transform: rotate(-25deg);
+  white-space: nowrap;
+  pointer-events: none;
+  transition: top 3s ease, left 3s ease;
+}
+
+.reader-viewport.theme-night .watermark-stamp {
+  color: rgba(255, 255, 255, 0.12);
+}
+
+/* Anti-Screen-Recording & Visibility Blur Shield */
+.reader-privacy-shield {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(18, 5, 6, 0.95);
+  backdrop-filter: blur(35px);
+  z-index: 100;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  text-align: center;
+  padding: 30px;
+}
+
+.reader-privacy-shield.active {
+  display: flex;
+}
+
+.privacy-shield-icon {
+  font-size: 3.5rem;
+  color: var(--color-gold);
+  margin-bottom: 16px;
+  animation: pulse 2s infinite;
+}
+
+.privacy-shield-title {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  color: #FFFFFF;
+  margin-bottom: 8px;
+}
+
+.privacy-shield-desc {
+  font-size: 0.95rem;
+  color: #D6CBC7;
+  max-width: 480px;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.9; }
+}
+
+/* Loading Spinner */
+.reader-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: var(--color-gold);
+}
+
+.spinner-ring {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(212, 175, 55, 0.25);
+  border-top-color: var(--color-gold);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

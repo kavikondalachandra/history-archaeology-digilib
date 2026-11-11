@@ -1,0 +1,258 @@
+/**
+ * DigiLib - Admin & Catalogue Management Portal
+ * Department of Ancient Indian History, Culture & Archaeology, RTMNU
+ */
+
+const DigiAdmin = (function() {
+  const ADMIN_PASS = 'rtmnu2026';
+  let isAuthenticatedAdmin = false;
+  let stagedFile = null;
+
+  function init() {
+    setupDropzone();
+  }
+
+  function checkAdminAuth() {
+    if (isAuthenticatedAdmin) return true;
+    const pass = prompt('Enter Librarian / Department Admin Passphrase:');
+    if (pass === ADMIN_PASS || pass === 'admin') {
+      isAuthenticatedAdmin = true;
+      return true;
+    } else if (pass !== null) {
+      alert('Access Denied: Incorrect passphrase.');
+    }
+    return false;
+  }
+
+  function openAdminModal() {
+    if (!checkAdminAuth()) return;
+    const modal = document.getElementById('adminModal');
+    if (modal) {
+      modal.classList.add('active');
+      renderBookList();
+    }
+  }
+
+  function closeAdminModal() {
+    const modal = document.getElementById('adminModal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  function setupDropzone() {
+    const dropzone = document.getElementById('uploadDropzone');
+    const fileInput = document.getElementById('adminFileInput');
+
+    if (!dropzone || !fileInput) return;
+
+    dropzone.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFileSelect(e.target.files[0]);
+      }
+    });
+
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('dragover');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) {
+        handleFileSelect(e.dataTransfer.files[0]);
+      }
+    });
+  }
+
+  function handleFileSelect(file) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!['pdf', 'docx', 'doc'].includes(ext)) {
+      alert('Please upload a valid PDF, DOCX, or DOC research manuscript.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      stagedFile = {
+        name: file.name,
+        size: (file.size / (1024 * 1024)).toFixed(1) + ' MB',
+        format: ext,
+        base64: e.target.result
+      };
+
+      // Auto-fill title from filename
+      const titleInput = document.getElementById('bookTitleInput');
+      if (titleInput && !titleInput.value) {
+        const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+        titleInput.value = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+      }
+
+      const formatInput = document.getElementById('bookFormatInput');
+      if (formatInput) formatInput.value = ext;
+
+      const dropzoneTitle = document.querySelector('.dropzone-title');
+      if (dropzoneTitle) {
+        dropzoneTitle.textContent = `Selected: ${file.name} (${stagedFile.size})`;
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Handle Book Upload / Submission
+  async function submitBookForm(e) {
+    e.preventDefault();
+
+    const title = document.getElementById('bookTitleInput').value.trim();
+    const author = document.getElementById('bookAuthorInput').value.trim();
+    const category = document.getElementById('bookCategoryInput').value;
+    const era = document.getElementById('bookEraInput').value.trim();
+    const year = document.getElementById('bookYearInput').value.trim();
+    const format = document.getElementById('bookFormatInput').value;
+    const description = document.getElementById('bookDescInput').value.trim();
+    const tagsStr = document.getElementById('bookTagsInput').value.trim();
+
+    if (!title || !author) {
+      alert('Please fill in both Book Title and Author.');
+      return;
+    }
+
+    const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()) : [category, 'Archaeology'];
+
+    // Select preset cover based on category
+    let cover = 'assets/images/covers/cover_wonder_india.svg';
+    if (category.includes('Excavation') || category.includes('Archaeology')) {
+      cover = 'assets/images/covers/cover_excavations_vidarbha.svg';
+    } else if (category.includes('Coin') || category.includes('Numismatics')) {
+      cover = 'assets/images/covers/cover_coins_ancient_india.svg';
+    } else if (category.includes('Inscription') || category.includes('Epigraphy')) {
+      cover = 'assets/images/covers/cover_inscriptions_ashoka.svg';
+    } else if (category.includes('Temple') || category.includes('Architecture')) {
+      cover = 'assets/images/covers/cover_temple_architecture.svg';
+    } else if (category.includes('Vidarbha')) {
+      cover = 'assets/images/covers/cover_vakataka_heritage.svg';
+    }
+
+    const bookPayload = {
+      title,
+      author,
+      category,
+      era: era || 'Ancient Period',
+      year: year || '2026',
+      format,
+      filePath: stagedFile ? `data/books/${stagedFile.name}` : `data/books/wonder_that_was_india.pdf`,
+      fileSize: stagedFile ? stagedFile.size : '2.5 MB',
+      pages: 150,
+      language: 'English',
+      coverImage: cover,
+      description: description || 'Scholarly monograph published under RTM Nagpur University Research Series.',
+      tags,
+      filename: stagedFile ? stagedFile.name : `book_${Date.now()}.${format}`,
+      fileBase64: stagedFile ? stagedFile.base64 : ''
+    };
+
+    const submitBtn = document.getElementById('submitBookBtn');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving to Library Catalogue...';
+    }
+
+    try {
+      const res = await DigiStorage.addBook(bookPayload);
+      alert('Success! The manuscript has been added to the Digital Library catalogue.');
+      
+      // Reset form
+      document.getElementById('addBookForm').reset();
+      stagedFile = null;
+      document.querySelector('.dropzone-title').textContent = 'Drag & Drop Research File or Click to Browse';
+
+      // Refresh main grid
+      DigiApp.loadBooks();
+      renderBookList();
+    } catch (err) {
+      alert('Error adding book: ' + err.message);
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Add Book to Catalogue';
+      }
+    }
+  }
+
+  // Render list of books in Admin Table
+  async function renderBookList() {
+    const tableBody = document.getElementById('adminBookTableBody');
+    if (!tableBody) return;
+
+    const books = await DigiStorage.getBooks();
+    tableBody.innerHTML = books.map((b, i) => `
+      <tr>
+        <td><strong>#${i + 1}</strong></td>
+        <td>${escapeHtml(b.title)}</td>
+        <td>${escapeHtml(b.author)}</td>
+        <td><span class="badge-gold">${escapeHtml(b.category)}</span></td>
+        <td><span class="format-badge ${b.format}">${b.format.toUpperCase()}</span></td>
+        <td>${b.downloads || 0}</td>
+        <td>
+          <button class="admin-action-btn delete" onclick="DigiAdmin.deleteBook('${b.id}')" title="Delete Book">&#128465;</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // Delete book from local cache
+  function deleteBook(bookId) {
+    if (!confirm('Are you sure you want to remove this book from the catalogue?')) return;
+    const localCustom = JSON.parse(localStorage.getItem('digilib_cached_books') || '[]');
+    const filtered = localCustom.filter(b => b.id !== bookId);
+    localStorage.setItem('digilib_cached_books', JSON.stringify(filtered));
+    DigiApp.loadBooks();
+    renderBookList();
+  }
+
+  // Export updated books.json for committing to GitHub
+  async function exportBooksJson() {
+    const books = await DigiStorage.getBooks();
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(books, null, 2));
+    const dlAnchor = document.createElement('a');
+    dlAnchor.setAttribute("href", dataStr);
+    dlAnchor.setAttribute("download", "books.json");
+    document.body.appendChild(dlAnchor);
+    dlAnchor.click();
+    dlAnchor.remove();
+  }
+
+  // Reset daily download limit for testing
+  function resetDownloadLimit() {
+    localStorage.removeItem('digilib_daily_downloads');
+    alert('Daily download counter has been reset! All users can download again.');
+    DigiAuth.updateUserUI();
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>'"]/g, tag => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;'
+    }[tag] || tag));
+  }
+
+  return {
+    init,
+    openAdminModal,
+    closeAdminModal,
+    submitBookForm,
+    renderBookList,
+    deleteBook,
+    exportBooksJson,
+    resetDownloadLimit
+  };
+})();

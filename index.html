@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Department of Ancient Indian History, Culture & Archaeology | Digital Research Library</title>
+  
+  <!-- Google Fonts: Cinzel, Playfair Display, Inter & Merriweather -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Inter:wght@400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/reader.css">
+  <link rel="stylesheet" href="assets/css/admin.css">
+
+  <!-- PDF.js for in-browser PDF rendering -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- Mammoth.js for in-browser DOCX rendering -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+</head>
+<body oncontextmenu="return false;">
+
+  <!-- Top Notification & Server Indicator Bar -->
+  <div class="top-notice-bar">
+    <div class="container" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+      <div class="notice-text">
+        <span class="badge-gold">Academic Archive</span>
+        <span>Digital Book Library &bull; Rashtrasant Tukadoji Maharaj Nagpur University</span>
+      </div>
+      <div class="notice-links">
+        <div class="server-pill" id="serverStatusPill" onclick="DigiApp.openServerModal()" title="Click to configure backend connection (Java Server / Cloud / Standalone)">
+          <div class="status-dot" id="serverStatusDot"></div>
+          <span id="serverStatusText">Detecting Server...</span>
+          <span style="font-size:0.7rem; opacity:0.8;">&#9881;</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       SITE HEADER: Two Logos (Left: RTMNU Seal, Right: AIHC&A Seal), Center Title
+       ========================================================================== -->
+  <header class="site-header">
+    <div class="container">
+      <div class="header-main-row">
+        
+        <!-- Left Logo: Rashtrasant Tukadoji Maharaj Nagpur University Seal -->
+        <a href="#" class="header-logo-left" title="Seal of Rashtrasant Tukadoji Maharaj Nagpur University">
+          <div class="logo-img-wrapper">
+            <img src="assets/images/rtmnu_logo.png" alt="RTM Nagpur University Seal" class="logo-img">
+          </div>
+        </a>
+
+        <!-- Center Title & Department Identity -->
+        <div class="header-title-center">
+          <div class="dept-subtitle">Department of Ancient Indian History, Culture & Archaeology</div>
+          <div class="univ-name">Rashtrasant Tukadoji Maharaj Nagpur University, Nagpur</div>
+          <h1 class="library-brand-title">
+            <span>Historical &amp; Archaeological</span>
+            <span class="gold-accent">Digital Book Library</span>
+          </h1>
+          <div class="motto-banner">&ldquo;विद्या परं दैवतम्&rdquo; &bull; Knowledge is the Supreme Deity &bull; Estd. 1923</div>
+        </div>
+
+        <!-- Right Logo: Department of Ancient Indian History Culture & Archaeology Seal -->
+        <a href="#" class="header-logo-right" title="Department of Ancient Indian History Culture & Archaeology Seal">
+          <div class="logo-img-wrapper">
+            <img src="assets/images/dept_archaeology_logo.jpg" alt="Department of AIHC & Archaeology Logo" class="logo-img">
+          </div>
+        </a>
+
+      </div>
+    </div>
+
+    <!-- Navigation Sub-Bar -->
+    <nav class="header-nav-bar">
+      <div class="container nav-row">
+        <ul class="nav-links">
+          <li><a href="#" class="nav-btn active" onclick="DigiApp.resetFilters()"><span>&#128218;</span> Browse Catalogue</a></li>
+          <li><a href="#aboutDepartment" class="nav-btn"><span>&#127963;</span> Department Archive</a></li>
+          <li><button class="nav-btn" onclick="DigiAdmin.openAdminModal()"><span>&#128228;</span> Admin / Add Book</button></li>
+          <li><button class="nav-btn" onclick="DigiApp.openServerModal()"><span>&#9881;</span> Server Options</button></li>
+        </ul>
+
+        <div class="nav-auth-section" id="userAuthStatus">
+          <!-- Populated dynamically by auth.js -->
+          <button onclick="DigiApp.openAuthModal()" class="nav-btn btn-primary">
+            <span>&#128272;</span> Verify Email / Sign In
+          </button>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ==========================================================================
+       HERO & SEARCH SECTION
+       ========================================================================== -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-content">
+        <h2 class="hero-tagline">
+          Explore Centuries of <span>Indian Archaeology</span> &amp; Historical Heritage
+        </h2>
+        <p class="hero-desc">
+          Rare excavation monographs, inscriptional corpuses, ancient numismatics, megalithic research, and architectural treatises. Unlimited online reading with protected academic preservation.
+        </p>
+
+        <!-- Search Bar -->
+        <div class="search-container">
+          <span class="search-icon">&#128269;</span>
+          <input type="text" id="mainSearchInput" class="search-input" placeholder="Search by title, author, dynasty, site (e.g. Naikund, Ashoka, Coins)...">
+          
+          <select id="searchFormatSelect" class="search-format-select">
+            <option value="all">All Formats</option>
+            <option value="pdf">PDF</option>
+            <option value="docx">DOCX</option>
+            <option value="doc">DOC</option>
+          </select>
+
+          <button class="search-btn" onclick="DigiApp.loadBooks()">
+            <span>Search</span>
+          </button>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="stats-banner">
+          <div class="stat-item">
+            <span>&#128218;</span>
+            <span>Total Volumes: <strong class="stat-number" id="statTotalVolumes">8</strong></span>
+          </div>
+          <div class="stat-item">
+            <span>&#128065;</span>
+            <span>Total Reads: <strong class="stat-number" id="statTotalReads">6,500+</strong></span>
+          </div>
+          <div class="stat-item">
+            <span>&#128394;</span>
+            <span>Formats: <strong class="stat-number">PDF, DOC, DOCX</strong></span>
+          </div>
+          <div class="stat-item">
+            <span>&#9878;</span>
+            <span>Daily Download Quota: <strong class="stat-number">1 / Day</strong></span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       CATEGORY FILTER BAR
+       ========================================================================== -->
+  <section class="categories-section">
+    <div class="container">
+      <div class="category-scroll-container" id="categoryScrollContainer">
+        <!-- Injected dynamically by app.js -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       MAIN CONTENT: BOOKS GRID
+       ========================================================================== -->
+  <main class="main-content">
+    <div class="container">
+      
+      <div class="section-header-row">
+        <div>
+          <h2 class="section-title">Archival Research Manuscripts</h2>
+          <span style="font-size:0.86rem; color:var(--color-text-muted);" id="activeResultsCount">Loading collection...</span>
+        </div>
+
+        <div class="view-controls">
+          <label for="sortBySelect" style="font-size:0.85rem; font-weight:600; color:var(--color-text-muted);">Sort By:</label>
+          <select id="sortBySelect" class="sort-select">
+            <option value="popular">Most Read</option>
+            <option value="title">Title (A - Z)</option>
+            <option value="author">Author</option>
+            <option value="recent">Recently Added</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Books Grid -->
+      <div class="books-grid" id="booksGrid">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ==========================================================================
+       FOOTER SECTION: University Details, Credits & Mandatory Disclaimer
+       ========================================================================== -->
+  <footer class="site-footer" id="aboutDepartment">
+    <div class="container">
+      <div class="footer-top-row">
+        
+        <!-- About Department Column -->
+        <div class="footer-col-about">
+          <div class="footer-logos-group">
+            <img src="assets/images/rtmnu_logo.png" alt="RTMNU Logo" class="footer-logo-thumb">
+            <img src="assets/images/dept_archaeology_logo.jpg" alt="AIHC&A Logo" class="footer-logo-thumb">
+          </div>
+          <h3 class="footer-heading">Department of Ancient Indian History, Culture &amp; Archaeology</h3>
+          <p class="footer-text">
+            Rashtrasant Tukadoji Maharaj Nagpur University (founded in 1923) has spearheaded pioneering archaeological excavations across central India, uncovering megalithic iron smelting at Naikund, ancient trade routes, and Vakataka monumental art at Mansar and Ramtek.
+          </p>
+        </div>
+
+        <!-- Quick Links -->
+        <div>
+          <h3 class="footer-heading">Research Domains</h3>
+          <ul class="footer-links-list">
+            <li><a href="#" onclick="DigiApp.setCategory('Archaeology & Excavations')">&#9656; Megaliths of Vidarbha</a></li>
+            <li><a href="#" onclick="DigiApp.setCategory('Epigraphy & Inscriptions')">&#9656; Ashokan Epigraphy & Brahmi</a></li>
+            <li><a href="#" onclick="DigiApp.setCategory('Numismatics & Ancient Coins')">&#9656; Ancient Indian Numismatics</a></li>
+            <li><a href="#" onclick="DigiApp.setCategory('Temple Architecture & Iconography')">&#9656; Vakataka Temple Art</a></li>
+            <li><a href="#" onclick="DigiApp.setCategory('Prehistory & Indus Valley')">&#9656; Harappan Civilizations</a></li>
+          </ul>
+        </div>
+
+        <!-- Mandatory Concept & Design Credits -->
+        <div>
+          <h3 class="footer-heading">Architecture &amp; Development</h3>
+          <p class="footer-text" style="margin-bottom:10px;">
+            Digital Preservation Platform engineered with embedded security, anti-screen capture safeguards, and 1-download-per-day enforcement.
+          </p>
+          <div class="credits-box">
+            <div class="credits-title">Concept &amp; Design By</div>
+            <div class="credits-name">K.S.Chandra, 2026</div>
+            <a href="mailto:kavikondalaschandra@gmail.com" class="credits-email">
+              <span>&#9993;</span> kavikondalaschandra@gmail.com
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Mandatory Bottom Disclaimer Bar -->
+    <div class="footer-disclaimer-bar">
+      <div class="container">
+        <p class="disclaimer-text">
+          <strong class="disclaimer-highlight">Disclaimer:</strong> All the books in this repository have been sourced and downloaded from various free and open source web sites. Due citations and acknowledgements will be given to respective Authors and Publishers.
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==========================================================================
+       MODAL 1: IN-APP UNIVERSAL READER (PDF, DOC, DOCX)
+       Features: Unlimited Reading, Anti-Screenshot, Focus Blur Shield, Watermark
+       ========================================================================== -->
+  <div class="reader-modal" id="readerModal">
+    
+    <!-- Reader Top Toolbar -->
+    <div class="reader-toolbar">
+      <div class="reader-book-info">
+        <span class="reader-format-badge" id="readerFormatBadge">PDF</span>
+        <span class="reader-title-text" id="readerBookTitle">Reading Research Volume</span>
+      </div>
+
+      <div class="reader-controls-group">
+        <!-- Page Controls -->
+        <div class="reader-page-indicator">
+          <button class="reader-btn" onclick="DigiReader.prevPage()" title="Previous Page">&#9664;</button>
+          <span>Page</span>
+          <input type="number" id="readerCurrentPage" class="reader-page-input" value="1" min="1">
+          <span>of <strong id="readerTotalPages">1</strong></span>
+          <button class="reader-btn" onclick="DigiReader.nextPage()" title="Next Page">&#9654;</button>
+        </div>
+
+        <!-- Zoom Controls -->
+        <button class="reader-btn" onclick="DigiReader.zoomOut()" title="Zoom Out">&#10134;</button>
+        <button class="reader-btn" onclick="DigiReader.resetZoom()" title="Reset Zoom">100%</button>
+        <button class="reader-btn" onclick="DigiReader.zoomIn()" title="Zoom In">&#10133;</button>
+
+        <!-- Reading Theme -->
+        <select class="sort-select" style="background:#2D080A; color:#FFF; border-color:var(--color-gold);" onchange="DigiReader.setTheme(this.value)">
+          <option value="theme-parchment">Parchment</option>
+          <option value="theme-night">Night Mode</option>
+          <option value="theme-day">Day Mode</option>
+        </select>
+
+        <!-- Fullscreen -->
+        <button class="reader-btn" onclick="DigiReader.toggleFullscreen()" title="Toggle Fullscreen">&#x26F6;</button>
+
+        <!-- Close Button -->
+        <button class="reader-btn btn-close" onclick="DigiReader.closeReader()">&#10006; Close Reader</button>
+      </div>
+    </div>
+
+    <!-- Reader Viewport -->
+    <div class="reader-viewport theme-parchment" id="readerViewport">
+      
+      <!-- Anti-Screen-Recording & Visibility Blur Shield -->
+      <div class="reader-privacy-shield" id="readerPrivacyShield">
+        <div class="privacy-shield-icon">&#128274;</div>
+        <h3 class="privacy-shield-title">Reading Paused &bull; Content Protected</h3>
+        <p class="privacy-shield-desc">
+          Screen capture, recording software, or window defocus detected. Return focus to this window to resume reading.
+        </p>
+      </div>
+
+      <!-- Dynamic Moving Watermark Canvas -->
+      <div id="readerWatermarkOverlay"></div>
+
+      <!-- Document Content Container -->
+      <div class="reader-document-container" id="readerDocumentContainer">
+        <!-- Rendered by reader.js -->
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 2: EMAIL VERIFICATION GATEWAY (Server-Backed OTP)
+       ========================================================================== -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>&#128272;</span> Research Scholar Authentication
+        </div>
+        <button class="modal-close-btn" onclick="DigiApp.closeModal('authModal')">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        
+        <!-- Step 1: Enter Email -->
+        <div id="authStepEmail">
+          <p style="font-size:0.9rem; color:var(--color-text-muted); margin-bottom:16px;">
+            To access unlimited online reading and request academic downloads, please verify your valid personal or university email address.
+          </p>
+          <div style="margin-bottom:16px;">
+            <label class="form-label" for="authEmailInput">Email Address</label>
+            <input type="email" id="authEmailInput" class="form-control" placeholder="scholar@university.ac.in" required>
+            <div id="authEmailError" style="color:#C0392B; font-size:0.8rem; margin-top:4px;"></div>
+          </div>
+          <button id="btnSendOtp" class="search-btn" style="width:100%; justify-content:center;" onclick="DigiApp.handleSendOtp()">
+            Send Verification Code (OTP)
+          </button>
+        </div>
+
+        <!-- Step 2: Enter OTP -->
+        <div id="authStepOtp" style="display:none;">
+          <p style="font-size:0.9rem; color:var(--color-text-muted); margin-bottom:14px;">
+            A 6-digit verification code has been dispatched for: <strong id="otpTargetEmail" style="color:var(--color-primary-dark);"></strong>
+          </p>
+          
+          <div style="margin-bottom:16px;">
+            <label class="form-label" for="authOtpInput">Enter 6-Digit OTP</label>
+            <input type="text" id="authOtpInput" class="form-control" placeholder="482910" maxlength="6" style="letter-spacing:4px; font-weight:700; text-align:center; font-size:1.2rem;">
+            <div id="authOtpError" style="color:#C0392B; font-size:0.8rem; margin-top:4px;"></div>
+          </div>
+
+          <!-- Instant Demonstration OTP helper -->
+          <div id="demoOtpHint" style="display:none; background:#FEF9E7; border:1px solid #F1C40F; border-radius:4px; padding:10px; margin-bottom:16px; font-size:0.85rem;">
+            <span>&#128161; <strong>Test Demo OTP:</strong> </span>
+            <span id="demoOtpCode" style="font-weight:800; color:#B7950B; font-size:1.05rem;"></span>
+            <span style="color:#666; font-size:0.75rem; display:block;">(Generated by server for immediate testing)</span>
+          </div>
+
+          <button id="btnVerifyOtp" class="search-btn" style="width:100%; justify-content:center;" onclick="DigiApp.handleVerifyOtp()">
+            Verify &amp; Enter Library
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 3: DAILY DOWNLOAD LIMIT EXCEEDED (1 Download Per Day)
+       ========================================================================== -->
+  <div class="modal-overlay" id="downloadLimitModal">
+    <div class="modal-card" style="border-color:#C0392B;">
+      <div class="modal-header" style="background:#5C1212;">
+        <div class="modal-title">
+          <span>&#9888;</span> Daily Download Quota Reached
+        </div>
+        <button class="modal-close-btn" onclick="DigiApp.closeModal('downloadLimitModal')">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align:center; padding:32px 24px;">
+        <div style="font-size:3rem; color:#C0392B; margin-bottom:12px;">&#9203;</div>
+        <h3 style="font-family:var(--font-heading); color:var(--color-primary-dark); margin-bottom:8px;">
+          1 Download Per Day Limit
+        </h3>
+        <p style="color:var(--color-text-muted); font-size:0.92rem; line-height:1.6; margin-bottom:20px;">
+          In accordance with the Department Archival Policy and repository bandwidth guidelines, registered users are allotted <strong>exactly 1 file download per calendar day</strong>.
+        </p>
+        <div style="background:var(--color-bg-subtle); border-radius:6px; padding:12px; margin-bottom:20px; font-size:0.85rem; border:1px solid var(--color-border);">
+          <strong>Unlimited Online Reading:</strong> You can continue reading any document in the collection online with zero restrictions!
+          <div style="margin-top:6px; color:var(--color-gold-dark); font-weight:700;">
+            Next Download Available: Tomorrow at 00:00 (Local Time)
+          </div>
+        </div>
+        <button class="search-btn" style="margin:0 auto; display:inline-flex;" onclick="DigiApp.closeModal('downloadLimitModal')">
+          Continue Online Reading
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 4: DOWNLOAD CONFIRMATION
+       ========================================================================== -->
+  <div class="modal-overlay" id="downloadConfirmModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>&#11015;</span> Confirm Academic Download
+        </div>
+        <button class="modal-close-btn" onclick="DigiApp.closeModal('downloadConfirmModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:0.92rem; color:var(--color-text-muted); margin-bottom:16px;">
+          You are using your <strong>1 Daily Download Allocation</strong> for:
+        </p>
+        <div style="background:var(--color-bg-subtle); border:1px solid var(--color-border); border-radius:var(--radius-sm); padding:16px; margin-bottom:18px;">
+          <h4 id="confirmDownloadTitle" style="font-family:var(--font-heading); color:var(--color-primary-dark); margin-bottom:4px;"></h4>
+          <div style="font-size:0.85rem; color:var(--color-text-muted); margin-bottom:8px;">
+            By <span id="confirmDownloadAuthor"></span>
+          </div>
+          <div style="display:flex; gap:12px; font-size:0.8rem; color:#555;">
+            <span>Format: <strong id="confirmDownloadFormat"></strong></span>
+            <span>File Size: <strong id="confirmDownloadSize"></strong></span>
+          </div>
+        </div>
+        <p style="font-size:0.82rem; color:#888; font-style:italic; margin-bottom:18px;">
+          Note: Once downloaded, your next download will unlock tomorrow. You will still have unlimited online reading access.
+        </p>
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button class="nav-btn" style="color:var(--color-text-main); border:1px solid var(--color-border);" onclick="DigiApp.closeModal('downloadConfirmModal')">Cancel</button>
+          <button class="search-btn" onclick="DigiApp.executeDownload()">Proceed with Download (1/1)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 5: ADMIN & CATALOGUE MANAGEMENT / BOOK UPLOADER
+       Features: Add PDF/DOC/DOCX, update data/books.json, export for GitHub
+       ========================================================================== -->
+  <div class="modal-overlay" id="adminModal">
+    <div class="modal-card admin-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>&#128228;</span> Library Administration &amp; New Book Ingestion
+        </div>
+        <button class="modal-close-btn" onclick="DigiAdmin.closeAdminModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        
+        <div class="admin-tabs">
+          <button class="admin-tab-btn active" id="tabBtnAdd" onclick="document.getElementById('adminTabAdd').style.display='block'; document.getElementById('adminTabList').style.display='none'; this.classList.add('active'); document.getElementById('tabBtnList').classList.remove('active');">
+            Add New Manuscript
+          </button>
+          <button class="admin-tab-btn" id="tabBtnList" onclick="document.getElementById('adminTabAdd').style.display='none'; document.getElementById('adminTabList').style.display='block'; this.classList.add('active'); document.getElementById('tabBtnAdd').classList.remove('active'); DigiAdmin.renderBookList();">
+            Manage Catalogue
+          </button>
+        </div>
+
+        <!-- Tab 1: Add New Book -->
+        <div id="adminTabAdd">
+          
+          <!-- Dropzone -->
+          <div class="dropzone" id="uploadDropzone">
+            <div class="dropzone-icon">&#128193;</div>
+            <div class="dropzone-title">Drag &amp; Drop Research File or Click to Browse</div>
+            <div class="dropzone-formats">Accepted formats: PDF (.pdf), Word (.docx, .doc) &bull; Max 50 MB</div>
+            <input type="file" id="adminFileInput" accept=".pdf,.docx,.doc" style="display:none;">
+          </div>
+
+          <!-- Metadata Form -->
+          <form id="addBookForm" onsubmit="DigiAdmin.submitBookForm(event)">
+            <div class="form-grid">
+              
+              <div class="form-group-full">
+                <label class="form-label" for="bookTitleInput">Manuscript / Book Title *</label>
+                <input type="text" id="bookTitleInput" class="form-control" placeholder="e.g. Megalithic Remains of Mahurjhari" required>
+              </div>
+
+              <div>
+                <label class="form-label" for="bookAuthorInput">Author / Research Body *</label>
+                <input type="text" id="bookAuthorInput" class="form-control" placeholder="e.g. Dr. S. B. Deo" required>
+              </div>
+
+              <div>
+                <label class="form-label" for="bookCategoryInput">Subject Category *</label>
+                <select id="bookCategoryInput" class="form-control">
+                  <option value="Archaeology & Excavations">Archaeology & Excavations</option>
+                  <option value="Ancient Indian History">Ancient Indian History</option>
+                  <option value="Epigraphy & Inscriptions">Epigraphy & Inscriptions</option>
+                  <option value="Numismatics & Ancient Coins">Numismatics & Ancient Coins</option>
+                  <option value="Temple Architecture & Iconography">Temple Architecture & Iconography</option>
+                  <option value="Prehistory & Indus Valley">Prehistory & Indus Valley</option>
+                  <option value="Heritage of Vidarbha & Central India">Heritage of Vidarbha & Central India</option>
+                  <option value="Sanskrit & Manuscripts">Sanskrit & Manuscripts</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="form-label" for="bookEraInput">Historical Period / Era</label>
+                <input type="text" id="bookEraInput" class="form-control" placeholder="e.g. Iron Age (c. 1000 BCE)">
+              </div>
+
+              <div>
+                <label class="form-label" for="bookYearInput">Publication Year</label>
+                <input type="text" id="bookYearInput" class="form-control" placeholder="2026">
+              </div>
+
+              <div>
+                <label class="form-label" for="bookFormatInput">Document Format</label>
+                <select id="bookFormatInput" class="form-control">
+                  <option value="pdf">PDF Document (.pdf)</option>
+                  <option value="docx">Word Open XML (.docx)</option>
+                  <option value="doc">Word Legacy / RTF (.doc)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="form-label" for="bookTagsInput">Tags (Comma Separated)</label>
+                <input type="text" id="bookTagsInput" class="form-control" placeholder="Vidarbha, Pottery, Excavation">
+              </div>
+
+              <div class="form-group-full">
+                <label class="form-label" for="bookDescInput">Academic Abstract / Description</label>
+                <textarea id="bookDescInput" class="form-control" rows="3" placeholder="Provide a brief synopsis of the research contents, excavation site, or historical scope..."></textarea>
+              </div>
+
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px;">
+              <button type="button" class="nav-btn" style="color:#C0392B; border:1px solid #E74C3C;" onclick="DigiAdmin.resetDownloadLimit()" title="Reset the 1-download-per-day restriction for testing">
+                &#9851; Reset Daily Download Quota
+              </button>
+              <button type="submit" id="submitBookBtn" class="search-btn">
+                Add Book to Catalogue
+              </button>
+            </div>
+          </form>
+
+        </div>
+
+        <!-- Tab 2: Manage Catalogue List -->
+        <div id="adminTabList" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+            <p style="font-size:0.86rem; color:var(--color-text-muted);">
+              Current volumes registered in the digital library repository.
+            </p>
+            <button class="nav-btn btn-primary" onclick="DigiAdmin.exportBooksJson()" title="Download updated books.json to commit to GitHub repository">
+              &#128190; Export books.json for GitHub
+            </button>
+          </div>
+          
+          <div class="admin-table-wrapper">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Title</th>
+                  <th>Author</th>
+                  <th>Category</th>
+                  <th>Format</th>
+                  <th>Downloads</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="adminBookTableBody">
+                <!-- Rendered by admin.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 6: FREE SERVER ENVIRONMENT CONNECTOR
+       Features: Switch between Local Java Server, Render/Vercel/Railway Free Tier
+       ========================================================================== -->
+  <div class="modal-overlay" id="serverModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>&#9881;</span> Free Server Environment &amp; Hosting Setup
+        </div>
+        <button class="modal-close-btn" onclick="DigiApp.closeModal('serverModal')">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p style="font-size:0.9rem; color:var(--color-text-muted); margin-bottom:14px;">
+          This Digital Library is fully ready for zero-cost hosting and server environments. Choose your deployment configuration:
+        </p>
+
+        <div style="background:var(--color-bg-subtle); border-radius:6px; padding:14px; margin-bottom:16px; font-size:0.86rem;">
+          <strong style="color:var(--color-primary-dark);">&#10004; Option 1: Free GitHub Pages Hosting (Recommended)</strong>
+          <p style="color:#555; margin-top:4px;">
+            Push this repository to GitHub and enable GitHub Pages in Settings &rarr; Pages. All static reading, search, anti-screenshot protection, and OTP simulations run 100% free with unlimited visitors.
+          </p>
+        </div>
+
+        <div style="background:var(--color-bg-subtle); border-radius:6px; padding:14px; margin-bottom:16px; font-size:0.86rem;">
+          <strong style="color:var(--color-primary-dark);">&#10004; Option 2: Free Server Environments (Render / Vercel / Cloudflare)</strong>
+          <p style="color:#555; margin-top:4px;">
+            Deploy serverless functions from <code>/api</code> or containerize the Java server on Render's free tier. Enter your custom backend API URL below:
+          </p>
+          <div style="margin-top:10px;">
+            <label class="form-label" for="customServerInput">Backend API Endpoint URL</label>
+            <input type="url" id="customServerInput" class="form-control" placeholder="http://localhost:8080 or https://your-app.onrender.com">
+          </div>
+        </div>
+
+        <div style="background:var(--color-bg-subtle); border-radius:6px; padding:14px; margin-bottom:16px; font-size:0.86rem;">
+          <strong style="color:var(--color-primary-dark);">&#10004; Option 3: Local Java Server &amp; Ubooquity Bridge</strong>
+          <p style="color:#555; margin-top:4px;">
+            Run <code>start-server.bat</code> on your local computer or campus LAN server. It launches the included Java backend with real-time file upload, rate-limiting, and Ubooquity integration.
+          </p>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button class="nav-btn" style="border:1px solid var(--color-border); color:var(--color-text-main);" onclick="DigiApp.closeModal('serverModal')">Cancel</button>
+          <button class="search-btn" onclick="DigiApp.saveServerSettings()">Save &amp; Connect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Security Toast -->
+  <div class="security-toast" id="securityToast"></div>
+
+  <!-- JavaScript Modules -->
+  <script src="assets/js/security.js"></script>
+  <script src="assets/js/storage.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/reader.js"></script>
+  <script src="assets/js/admin.js"></script>
+  <script src="assets/js/app.js"></script>
+
+</body>
+</html>

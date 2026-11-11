@@ -41,7 +41,13 @@ const DigiApp = (function() {
 
     if (DigiStorage.isConnected()) {
       dot.className = 'status-dot';
-      text.textContent = 'Java Server Active (Port 8080)';
+      const info = DigiStorage.getServerInfo();
+      const url = DigiStorage.getServerUrl();
+      if ((info && info.server && info.server.includes('Vercel')) || url.includes('vercel.app')) {
+        text.textContent = 'Vercel Cloud Active';
+      } else {
+        text.textContent = 'Java Server Active (Port 8080)';
+      }
     } else {
       dot.className = 'status-dot cloud';
       text.textContent = 'GitHub / Cloud Engine';

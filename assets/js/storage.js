@@ -10,23 +10,45 @@ const DigiStorage = (function() {
   const BOOKS_CACHE_KEY = 'digilib_cached_books';
   const DOWNLOADS_KEY = 'digilib_daily_downloads';
 
-  let currentServerUrl = localStorage.getItem(SERVER_URL_KEY) || DEFAULT_LOCAL_SERVER;
+  let currentServerUrl = localStorage.getItem(SERVER_URL_KEY) || (
+    typeof window !== 'undefined' && window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && window.location.protocol.startsWith('http')
+      ? window.location.origin
+      : DEFAULT_LOCAL_SERVER
+  );
   let isServerConnected = false;
+  let serverInfo = null;
 
   // Initialize and check server connectivity
   async function init() {
+    // 1. Try configured server URL
     try {
       const resp = await fetch(`${currentServerUrl}/api/status`, { method: 'GET', cache: 'no-store' });
       if (resp.ok) {
         isServerConnected = true;
-        console.log('[DigiLib] Connected to Java Server at:', currentServerUrl);
-      } else {
-        isServerConnected = false;
+        try { serverInfo = await resp.json(); } catch(e) { serverInfo = { server: 'Online' }; }
+        console.log('[DigiLib] Connected to server at:', currentServerUrl, serverInfo);
+        return isServerConnected;
       }
-    } catch (e) {
-      isServerConnected = false;
-      console.log('[DigiLib] Running in GitHub Pages / Web Mode (Local Java server not detected at ' + currentServerUrl + ')');
+    } catch (e) {}
+
+    // 2. If currentServerUrl was localhost but failed, try current window origin (e.g. Vercel deployment)
+    if (typeof window !== 'undefined' && window.location.origin && window.location.origin !== currentServerUrl && window.location.protocol.startsWith('http')) {
+      try {
+        const resp = await fetch(`${window.location.origin}/api/status`, { method: 'GET', cache: 'no-store' });
+        if (resp.ok) {
+          currentServerUrl = window.location.origin;
+          isServerConnected = true;
+          try { serverInfo = await resp.json(); } catch(e) { serverInfo = { server: 'Vercel Serverless Cloud Engine' }; }
+          localStorage.setItem(SERVER_URL_KEY, currentServerUrl);
+          console.log('[DigiLib] Auto-detected Vercel / Cloud Host at:', currentServerUrl);
+          return isServerConnected;
+        }
+      } catch (e) {}
     }
+
+    isServerConnected = false;
+    serverInfo = null;
+    console.log('[DigiLib] Running in GitHub Pages / Standalone Web Mode');
     return isServerConnected;
   }
 
@@ -148,6 +170,10 @@ const DigiStorage = (function() {
     return isServerConnected;
   }
 
+  function getServerInfo() {
+    return serverInfo;
+  }
+
   return {
     init,
     getBooks,
@@ -157,6 +183,7 @@ const DigiStorage = (function() {
     getRemainingDownloads,
     setServerUrl,
     getServerUrl,
-    isConnected
+    isConnected,
+    getServerInfo
   };
 })();

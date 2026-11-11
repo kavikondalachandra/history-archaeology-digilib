@@ -1,0 +1,21 @@
+{
+  "name": "history-archaeology-digilib",
+  "version": "1.0.0",
+  "description": "Historical & Archaeological Digital Research Library - RTM Nagpur University",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@vercel/blob": "^0.27.1"
+  },
+  "keywords": [
+    "archaeology",
+    "history",
+    "digital-library",
+    "rtmnu",
+    "ubooquity"
+  ],
+  "author": "K.S.Chandra, 2026",
+  "license": "ISC"
+}

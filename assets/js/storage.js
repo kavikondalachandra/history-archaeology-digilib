@@ -73,6 +73,24 @@ const DigiStorage = (function() {
       });
       return await resp.json();
     } else {
+      // Check if Vercel Blob endpoint is available
+      try {
+        const vercelBlobResp = await fetch('/api/upload-blob', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bookData)
+        });
+        if (vercelBlobResp.ok) {
+          const blobRes = await vercelBlobResp.json();
+          if (blobRes.success && blobRes.url) {
+            bookData.filePath = blobRes.url;
+            console.log('[DigiLib] Book saved to Vercel Blob Storage:', blobRes.url);
+          }
+        }
+      } catch (e) {
+        // Fallback if not on Vercel or Vercel Blob not enabled
+      }
+
       // Save in browser storage and offer export for GitHub repository
       const localCustom = JSON.parse(localStorage.getItem(BOOKS_CACHE_KEY) || '[]');
       const newBook = {

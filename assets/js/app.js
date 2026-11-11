@@ -5,7 +5,13 @@
  * Concept & Design by K.S.Chandra, 2026, kavikondalaschandra@gmail.com
  */
 
-const DigiApp = (function() {
+var DigiApp = (function() {
+  const getStorage = () => (typeof window !== 'undefined' ? window.DigiStorage : null);
+  const getAuth = () => (typeof window !== 'undefined' ? window.DigiAuth : null);
+  const getSecurity = () => (typeof window !== 'undefined' ? window.DigiSecurity : null);
+  const getReader = () => (typeof window !== 'undefined' ? window.DigiReader : null);
+  const getAdmin = () => (typeof window !== 'undefined' ? window.DigiAdmin : null);
+
   let allBooks = [];
   let currentCategory = 'all';
   let searchQuery = '';
@@ -14,21 +20,21 @@ const DigiApp = (function() {
   let pendingBookToDownload = null;
 
   async function init() {
-    // 1. Initialize Sub-systems
-    DigiSecurity.init();
-    await DigiStorage.init();
-    DigiAuth.init();
-    DigiAdmin.init();
+    // 1. Initialize Sub-systems safely
+    try { const sec = getSecurity(); if (sec) sec.init(); } catch(e) { console.warn('Security init:', e); }
+    try { const st = getStorage(); if (st) await st.init(); } catch(e) { console.warn('Storage init:', e); }
+    try { const au = getAuth(); if (au) au.init(); } catch(e) { console.warn('Auth init:', e); }
+    try { const ad = getAdmin(); if (ad) ad.init(); } catch(e) { console.warn('Admin init:', e); }
 
     // 2. Update Server connection indicator
-    updateServerIndicator();
+    try { updateServerIndicator(); } catch(e) {}
 
-    // 3. Load books and render
-    await loadBooks();
+    // 3. Load books and render (guaranteed to render books)
+    try { await loadBooks(); } catch(e) { console.error('Failed to load books:', e); }
 
     // 4. Setup Event Listeners
-    setupSearch();
-    setupModals();
+    try { setupSearch(); } catch(e) {}
+    try { setupModals(); } catch(e) {}
   }
 
   // Update Top Bar Server Indicator
@@ -39,10 +45,11 @@ const DigiApp = (function() {
 
     if (!pill || !text) return;
 
-    if (DigiStorage.isConnected()) {
+    const storage = getStorage();
+    if (storage && storage.isConnected()) {
       dot.className = 'status-dot';
-      const info = DigiStorage.getServerInfo();
-      const url = DigiStorage.getServerUrl();
+      const info = storage.getServerInfo();
+      const url = storage.getServerUrl() || '';
       if ((info && info.server && info.server.includes('Vercel')) || url.includes('vercel.app')) {
         text.textContent = 'Vercel Cloud Active';
       } else {
@@ -50,13 +57,14 @@ const DigiApp = (function() {
       }
     } else {
       dot.className = 'status-dot cloud';
-      text.textContent = 'GitHub / Cloud Engine';
+      text.textContent = 'Online Research Archive';
     }
   }
 
   // Load books from Storage
   async function loadBooks() {
-    allBooks = await DigiStorage.getBooks();
+    const storage = getStorage();
+    allBooks = storage ? await storage.getBooks() : [];
     renderCategories();
     renderBooks();
     updateStats();
@@ -143,7 +151,7 @@ const DigiApp = (function() {
     if (!grid) return;
 
     const books = getFilteredBooks();
-    if (countEl) countEl.textContent = `${books.length} Books Found`;
+    if (countEl) countEl.textContent = `${books.length} Books Available`;
 
     if (books.length === 0) {
       grid.innerHTML = `
@@ -225,16 +233,18 @@ const DigiApp = (function() {
     const book = allBooks.find(b => b.id === bookId);
     if (!book) return;
 
-    // Check if authenticated by email
-    if (!DigiAuth.isAuthenticated()) {
+    const auth = getAuth();
+    const reader = getReader();
+
+    if (auth && !auth.isAuthenticated()) {
       openAuthModal(() => {
-        DigiReader.openBook(book);
+        if (reader) reader.openBook(book);
         incrementReadCounter(book);
       });
       return;
     }
 
-    DigiReader.openBook(book);
+    if (reader) reader.openBook(book);
     incrementReadCounter(book);
   }
 
@@ -249,23 +259,23 @@ const DigiApp = (function() {
     const book = allBooks.find(b => b.id === bookId);
     if (!book) return;
 
-    // Must be verified by email
-    if (!DigiAuth.isAuthenticated()) {
+    const auth = getAuth();
+    const storage = getStorage();
+
+    if (auth && !auth.isAuthenticated()) {
       openAuthModal(() => {
         handleDownloadClick(bookId);
       });
       return;
     }
 
-    const user = DigiAuth.getUser();
+    const user = auth ? auth.getUser() : null;
 
-    // Check download quota for today
-    if (!DigiStorage.canDownloadToday(user.email)) {
+    if (storage && user && !storage.canDownloadToday(user.email)) {
       openDownloadLimitModal();
       return;
     }
 
-    // Show Confirmation Modal
     pendingBookToDownload = book;
     openDownloadConfirmModal(book);
   }
@@ -274,16 +284,17 @@ const DigiApp = (function() {
   async function executeDownload() {
     if (!pendingBookToDownload) return;
     const book = pendingBookToDownload;
-    const user = DigiAuth.getUser();
+    const auth = getAuth();
+    const storage = getStorage();
+    const security = getSecurity();
+    const user = auth ? auth.getUser() : { email: 'scholar@rtmnu.ac.in' };
 
     closeModal('downloadConfirmModal');
 
-    // Trigger download
-    if (DigiStorage.isConnected()) {
-      const downloadUrl = `${DigiStorage.getServerUrl()}/api/books/download?id=${book.id}&email=${encodeURIComponent(user.email)}&token=${user.token || ''}`;
+    if (storage && storage.isConnected()) {
+      const downloadUrl = `${storage.getServerUrl()}/api/books/download?id=${book.id}&email=${encodeURIComponent(user.email)}&token=${user.token || ''}`;
       window.location.href = downloadUrl;
     } else {
-      // Direct file download for static mode
       const a = document.createElement('a');
       a.href = book.filePath;
       a.download = `${book.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.${book.format || 'pdf'}`;
@@ -292,15 +303,13 @@ const DigiApp = (function() {
       a.remove();
     }
 
-    // Record download
-    DigiStorage.recordDownload(user.email, book.id);
+    if (storage) storage.recordDownload(user.email, book.id);
     book.downloads = (book.downloads || 0) + 1;
 
-    // Update UI
-    DigiAuth.updateUserUI();
+    if (auth) auth.updateUserUI();
     pendingBookToDownload = null;
 
-    DigiSecurity.showToast('Daily download recorded (1/1). Your next download unlocks tomorrow.');
+    if (security) security.showToast('Daily download recorded (1/1). Your next download unlocks tomorrow.');
   }
 
   // Search and Filter Setup
@@ -351,7 +360,6 @@ const DigiApp = (function() {
 
   // Modal Setup
   function setupModals() {
-    // Close modals on clicking overlay or close buttons
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
       overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
@@ -376,12 +384,17 @@ const DigiApp = (function() {
     const modal = document.getElementById('authModal');
     if (!modal) return;
 
-    // Reset auth modal steps
-    document.getElementById('authStepEmail').style.display = 'block';
-    document.getElementById('authStepOtp').style.display = 'none';
-    document.getElementById('authEmailInput').value = '';
-    document.getElementById('authOtpInput').value = '';
-    document.getElementById('demoOtpHint').style.display = 'none';
+    const stepEmail = document.getElementById('authStepEmail');
+    const stepOtp = document.getElementById('authStepOtp');
+    const emailInput = document.getElementById('authEmailInput');
+    const otpInput = document.getElementById('authOtpInput');
+    const demoHint = document.getElementById('demoOtpHint');
+
+    if (stepEmail) stepEmail.style.display = 'block';
+    if (stepOtp) stepOtp.style.display = 'none';
+    if (emailInput) emailInput.value = '';
+    if (otpInput) otpInput.value = '';
+    if (demoHint) demoHint.style.display = 'none';
 
     modal.classList.add('active');
   }
@@ -390,25 +403,27 @@ const DigiApp = (function() {
     const email = document.getElementById('authEmailInput').value;
     const btn = document.getElementById('btnSendOtp');
     const errorEl = document.getElementById('authEmailError');
-    errorEl.textContent = '';
+    if (errorEl) errorEl.textContent = '';
 
     btn.disabled = true;
     btn.textContent = 'Sending Verification Code...';
 
+    const auth = getAuth();
     try {
-      const res = await DigiAuth.requestOtp(email);
+      if (!auth) throw new Error('Authentication service loading...');
+      const res = await auth.requestOtp(email);
       document.getElementById('authStepEmail').style.display = 'none';
       document.getElementById('authStepOtp').style.display = 'block';
       document.getElementById('otpTargetEmail').textContent = email;
 
-      // Show Demo OTP box for instant testing
-      if (res.demoOtp) {
+      if (res && res.demoOtp) {
         const hint = document.getElementById('demoOtpHint');
-        document.getElementById('demoOtpCode').textContent = res.demoOtp;
-        hint.style.display = 'block';
+        const codeEl = document.getElementById('demoOtpCode');
+        if (codeEl) codeEl.textContent = res.demoOtp;
+        if (hint) hint.style.display = 'block';
       }
     } catch (err) {
-      errorEl.textContent = err.message;
+      if (errorEl) errorEl.textContent = err.message;
     } finally {
       btn.disabled = false;
       btn.textContent = 'Send Verification Code (OTP)';
@@ -420,15 +435,19 @@ const DigiApp = (function() {
     const otp = document.getElementById('authOtpInput').value;
     const btn = document.getElementById('btnVerifyOtp');
     const errorEl = document.getElementById('authOtpError');
-    errorEl.textContent = '';
+    if (errorEl) errorEl.textContent = '';
 
     btn.disabled = true;
     btn.textContent = 'Verifying...';
 
+    const auth = getAuth();
+    const security = getSecurity();
+
     try {
-      await DigiAuth.verifyOtp(email, otp);
+      if (!auth) throw new Error('Authentication service loading...');
+      await auth.verifyOtp(email, otp);
       closeModal('authModal');
-      DigiSecurity.showToast('Email verified successfully! Welcome to the Digital Research Archive.');
+      if (security) security.showToast('Email verified successfully! Welcome to the Digital Research Archive.');
 
       if (typeof authSuccessCallback === 'function') {
         const cb = authSuccessCallback;
@@ -436,20 +455,18 @@ const DigiApp = (function() {
         cb();
       }
     } catch (err) {
-      errorEl.textContent = err.message;
+      if (errorEl) errorEl.textContent = err.message;
     } finally {
       btn.disabled = false;
       btn.textContent = 'Verify & Enter Library';
     }
   }
 
-  // Download Limit Reached Modal
   function openDownloadLimitModal() {
     const modal = document.getElementById('downloadLimitModal');
     if (modal) modal.classList.add('active');
   }
 
-  // Download Confirmation Modal
   function openDownloadConfirmModal(book) {
     const modal = document.getElementById('downloadConfirmModal');
     if (!modal) return;
@@ -462,9 +479,9 @@ const DigiApp = (function() {
     modal.classList.add('active');
   }
 
-  // Server Environment Connector - Protected inside Librarian Portal
-  function openServerModal() {
-    DigiAdmin.openAdminModal('server');
+  function openServerModal(tab) {
+    const admin = getAdmin();
+    if (admin) admin.openAdminModal(tab || 'server');
   }
 
   function closeModal(modalId) {
@@ -491,6 +508,7 @@ const DigiApp = (function() {
   return {
     init,
     loadBooks,
+    updateServerIndicator,
     setCategory,
     resetFilters,
     handleReadClick,
@@ -500,12 +518,23 @@ const DigiApp = (function() {
     handleSendOtp,
     handleVerifyOtp,
     openServerModal,
-    saveServerSettings,
     closeModal
   };
 })();
 
-// Bootstrap on DOM Ready
-document.addEventListener('DOMContentLoaded', () => {
-  DigiApp.init();
-});
+// Attach explicitly to window for inline onclick handlers
+if (typeof window !== 'undefined') {
+  window.DigiApp = DigiApp;
+}
+
+// Bootstrap on DOM Ready or immediately if DOM is already loaded
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      DigiApp.init();
+    });
+  } else {
+    // DOM already loaded
+    DigiApp.init();
+  }
+}

@@ -8,7 +8,7 @@
  *  - Protected server & storage configuration (Vercel Backend URL)
  */
 
-const DigiAdmin = (function() {
+var DigiAdmin = (function() {
   const ADMIN_PASS = 'rtmnu2026';
   let isAuthenticatedAdmin = false;
   let stagedFile = null;
@@ -373,3 +373,7 @@ const DigiAdmin = (function() {
     resetDownloadLimit
   };
 })();
+
+if (typeof window !== 'undefined') {
+  window.DigiAdmin = DigiAdmin;
+}

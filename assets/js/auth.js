@@ -3,7 +3,7 @@
  * Department of Ancient Indian History, Culture & Archaeology, RTMNU
  */
 
-const DigiAuth = (function() {
+var DigiAuth = (function() {
   const AUTH_STORAGE_KEY = 'digilib_auth_user';
   let currentUser = null;
 
@@ -153,3 +153,7 @@ const DigiAuth = (function() {
     updateUserUI
   };
 })();
+
+if (typeof window !== 'undefined') {
+  window.DigiAuth = DigiAuth;
+}

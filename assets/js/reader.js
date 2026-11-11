@@ -3,7 +3,7 @@
  * Department of Ancient Indian History, Culture & Archaeology, RTMNU
  */
 
-const DigiReader = (function() {
+var DigiReader = (function() {
   let currentBook = null;
   let pdfDoc = null;
   let currentPage = 1;
@@ -282,3 +282,7 @@ const DigiReader = (function() {
     toggleFullscreen
   };
 })();
+
+if (typeof window !== 'undefined') {
+  window.DigiReader = DigiReader;
+}

@@ -8,7 +8,7 @@
  *  - Text copy/drag restriction
  */
 
-const DigiSecurity = (function() {
+var DigiSecurity = (function() {
   let watermarkInterval = null;
   let watermarkX = 20;
   let watermarkY = 80;
@@ -179,3 +179,7 @@ const DigiSecurity = (function() {
     showToast
   };
 })();
+
+if (typeof window !== 'undefined') {
+  window.DigiSecurity = DigiSecurity;
+}

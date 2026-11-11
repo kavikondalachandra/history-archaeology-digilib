@@ -19,6 +19,7 @@
 
 .admin-tabs {
   display: flex;
+  flex-wrap: wrap;
   border-bottom: 2px solid var(--color-border);
   margin-bottom: 24px;
   gap: 8px;

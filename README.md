@@ -51,10 +51,11 @@ Built to run seamlessly both as a **standalone GitHub-hosted web application (Gi
      - *Sanskrit & Manuscripts*
    - Filter by file format (PDF, DOCX, DOC) and sort by popularity, title, or author.
 7. **📤 Admin Portal & New Manuscript Ingestion**:
-   - Secure librarian / admin management portal (passphrase: `rtmnu2026`).
+   - Secure librarian / admin management portal (initial default passphrase: `rtmnu2026`, customizable directly inside the portal's *Change Passphrase* tab).
    - Drag-and-drop file upload for PDF, DOCX, DOC.
    - Dynamic catalogue database updating (`data/books.json`).
    - 1-click **Export books.json** for syncing updates to GitHub.
+   - In-portal Passphrase Manager with instant reset to default (`rtmnu2026`).
 8. **🌐 Free Server Environments & Hybrid Architecture**:
    - Ready for **GitHub Pages** (free unlimited web hosting).
    - Ready for **Java Server** (`server/DigiLibServer.java` on port 8080).

@@ -478,6 +478,11 @@
           <button class="search-btn" style="margin:0 auto; padding:10px 28px;" onclick="DigiAdmin.loginWithPassphrase()">
             Unlock Administration Portal
           </button>
+          <div style="margin-top:14px;">
+            <a href="#" onclick="DigiAdmin.promptResetPassphrase(event)" style="font-size:0.82rem; color:var(--color-primary); text-decoration:underline;">
+              Forgot Passphrase? Reset to default
+            </a>
+          </div>
         </div>
 
         <!-- Authenticated Administration Content View -->
@@ -492,6 +497,9 @@
             </button>
             <button class="admin-tab-btn" id="tabBtnServer" onclick="DigiAdmin.switchTab('server')">
               Server &amp; Storage Settings
+            </button>
+            <button class="admin-tab-btn" id="tabBtnSecurity" onclick="DigiAdmin.switchTab('security')">
+              &#128273; Change Passphrase
             </button>
             <button class="nav-btn" style="margin-left:auto; font-size:0.78rem; padding:4px 10px; color:#C0392B; border:1px solid #E74C3C;" onclick="DigiAdmin.logoutAdmin()" title="Lock administration portal">
               &#128274; Lock / Logout
@@ -652,6 +660,66 @@
                 <li><strong>On Local Computer:</strong> Launch <code>start-server.bat</code> to run the included Java backend on port 8080.</li>
                 <li><strong>On GitHub Pages:</strong> Enter your Vercel URL above so GitHub Pages routes API requests to Vercel.</li>
               </ul>
+            </div>
+
+          </div>
+
+          <!-- Tab 4: Security & Passphrase Management -->
+          <div id="adminTabSecurity" style="display:none;">
+            
+            <div style="background:var(--color-bg-subtle); border-radius:6px; padding:16px; margin-bottom:16px; border:1px solid var(--color-border);">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                <span style="font-size:1.4rem; color:var(--color-gold);">&#128273;</span>
+                <strong style="color:var(--color-primary-dark); font-size:1rem;">Librarian Passphrase Management</strong>
+              </div>
+              <p style="color:#555; font-size:0.86rem; line-height:1.5; margin:0;">
+                Update the secret access passphrase used to unlock this administration portal. Once updated, the new passphrase is required to ingest books, modify catalogue records, or adjust backend settings.
+              </p>
+            </div>
+
+            <form id="changePassphraseForm" onsubmit="DigiAdmin.submitChangePassphrase(event)" style="background:var(--color-bg-subtle); border-radius:6px; padding:20px; border:1px solid var(--color-border); margin-bottom:18px;">
+              
+              <div class="form-group-full" style="margin-bottom:16px;">
+                <label class="form-label" for="currentPassInput">Current Passphrase *</label>
+                <div style="position:relative;">
+                  <input type="password" id="currentPassInput" class="form-control" placeholder="Enter current passphrase (default: rtmnu2026)" required style="padding-right:42px;">
+                  <button type="button" onclick="DigiAdmin.togglePasswordVisibility('currentPassInput', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:#777; font-size:1.1rem; padding:4px;" title="Toggle visibility">&#128065;</button>
+                </div>
+              </div>
+
+              <div class="form-grid" style="margin-bottom:16px;">
+                <div>
+                  <label class="form-label" for="newPassInput">New Passphrase *</label>
+                  <div style="position:relative;">
+                    <input type="password" id="newPassInput" class="form-control" placeholder="Minimum 6 characters" required minlength="6" style="padding-right:42px;">
+                    <button type="button" onclick="DigiAdmin.togglePasswordVisibility('newPassInput', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:#777; font-size:1.1rem; padding:4px;" title="Toggle visibility">&#128065;</button>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="form-label" for="confirmPassInput">Confirm New Passphrase *</label>
+                  <div style="position:relative;">
+                    <input type="password" id="confirmPassInput" class="form-control" placeholder="Re-type new passphrase" required minlength="6" style="padding-right:42px;">
+                    <button type="button" onclick="DigiAdmin.togglePasswordVisibility('confirmPassInput', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:#777; font-size:1.1rem; padding:4px;" title="Toggle visibility">&#128065;</button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="changePassMsg" style="font-size:0.88rem; font-weight:600; margin-bottom:14px; padding:8px 12px; border-radius:4px; display:none;"></div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top:10px;">
+                <button type="button" class="nav-btn" style="color:#C0392B; border:1px solid #E74C3C; font-size:0.82rem; padding:8px 14px;" onclick="DigiAdmin.resetPassphraseToDefault()">
+                  &#8634; Reset to Default (rtmnu2026)
+                </button>
+                <button type="submit" id="btnUpdatePass" class="search-btn" style="padding:10px 24px;">
+                  Update Passphrase
+                </button>
+              </div>
+            </form>
+
+            <div style="background:#FFF8E7; border-left:4px solid var(--color-gold); border-radius:4px; padding:12px 16px; font-size:0.84rem; color:#6B5317; line-height:1.5;">
+              <strong>&#9432; Security &amp; Storage Architecture:</strong>
+              Your custom passphrase is stored securely in your browser's persistent local storage. If you ever switch devices or browsers, the default initial faculty passphrase is <code>rtmnu2026</code>.
             </div>
 
           </div>

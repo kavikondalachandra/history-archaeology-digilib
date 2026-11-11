@@ -9,9 +9,34 @@
  */
 
 var DigiAdmin = (function() {
-  const ADMIN_PASS = 'rtmnu2026';
+  const ADMIN_PASS_STORAGE_KEY = 'digilib_admin_passphrase';
+  const DEFAULT_ADMIN_PASS = 'rtmnu2026';
   let isAuthenticatedAdmin = false;
   let stagedFile = null;
+
+  function getStoredPassphrase() {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const stored = localStorage.getItem(ADMIN_PASS_STORAGE_KEY);
+        if (stored && stored.trim().length > 0) {
+          return stored.trim();
+        }
+      }
+    } catch (e) {}
+    return DEFAULT_ADMIN_PASS;
+  }
+
+  function saveStoredPassphrase(newPass) {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(ADMIN_PASS_STORAGE_KEY, newPass.trim());
+    }
+  }
+
+  function resetStoredPassphrase() {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(ADMIN_PASS_STORAGE_KEY);
+    }
+  }
 
   function init() {
     setupDropzone();
@@ -49,7 +74,9 @@ var DigiAdmin = (function() {
     const errorEl = document.getElementById('adminLoginError');
     const pass = passInput ? passInput.value.trim() : '';
 
-    if (pass === ADMIN_PASS || pass === 'admin') {
+    const currentPass = getStoredPassphrase();
+
+    if (pass === currentPass) {
       isAuthenticatedAdmin = true;
       if (errorEl) errorEl.textContent = '';
       const loginView = document.getElementById('adminLoginView');
@@ -57,12 +84,46 @@ var DigiAdmin = (function() {
       if (loginView) loginView.style.display = 'none';
       if (contentView) contentView.style.display = 'block';
       switchTab('add');
-      DigiSecurity.showToast('Librarian administration portal unlocked.');
+      if (typeof window !== 'undefined' && window.DigiSecurity) {
+        window.DigiSecurity.showToast('Librarian administration portal unlocked.');
+      }
     } else {
       if (errorEl) errorEl.textContent = 'Incorrect passphrase. Access restricted to authorized faculty.';
       if (passInput) {
         passInput.value = '';
         passInput.focus();
+      }
+    }
+  }
+
+  function promptResetPassphrase(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const current = getStoredPassphrase();
+    if (current === DEFAULT_ADMIN_PASS) {
+      alert('The administration passphrase is currently set to the default: ' + DEFAULT_ADMIN_PASS);
+      const passInput = document.getElementById('adminPassInput');
+      if (passInput) {
+        passInput.value = DEFAULT_ADMIN_PASS;
+        passInput.focus();
+      }
+      return;
+    }
+
+    const answer = prompt(
+      'Reset Librarian Passphrase?\n\nTo reset the administrator passphrase back to default (rtmnu2026), type RESET below:'
+    );
+    if (answer && answer.trim().toUpperCase() === 'RESET') {
+      resetStoredPassphrase();
+      alert('Passphrase has been reset to default: ' + DEFAULT_ADMIN_PASS);
+      const passInput = document.getElementById('adminPassInput');
+      if (passInput) {
+        passInput.value = DEFAULT_ADMIN_PASS;
+        passInput.focus();
+      }
+      const errorEl = document.getElementById('adminLoginError');
+      if (errorEl) errorEl.textContent = '';
+      if (typeof window !== 'undefined' && window.DigiSecurity) {
+        window.DigiSecurity.showToast('Passphrase reset to default (rtmnu2026)');
       }
     }
   }
@@ -75,7 +136,9 @@ var DigiAdmin = (function() {
     if (contentView) contentView.style.display = 'none';
     const passInput = document.getElementById('adminPassInput');
     if (passInput) passInput.value = '';
-    DigiSecurity.showToast('Librarian portal locked.');
+    if (typeof window !== 'undefined' && window.DigiSecurity) {
+      window.DigiSecurity.showToast('Librarian portal locked.');
+    }
   }
 
   function closeAdminModal() {
@@ -87,23 +150,29 @@ var DigiAdmin = (function() {
     const tabAdd = document.getElementById('adminTabAdd');
     const tabList = document.getElementById('adminTabList');
     const tabServer = document.getElementById('adminTabServer');
+    const tabSecurity = document.getElementById('adminTabSecurity');
 
     const btnAdd = document.getElementById('tabBtnAdd');
     const btnList = document.getElementById('tabBtnList');
     const btnServer = document.getElementById('tabBtnServer');
+    const btnSecurity = document.getElementById('tabBtnSecurity');
 
     if (tabAdd) tabAdd.style.display = (tabName === 'add') ? 'block' : 'none';
     if (tabList) tabList.style.display = (tabName === 'list') ? 'block' : 'none';
     if (tabServer) tabServer.style.display = (tabName === 'server') ? 'block' : 'none';
+    if (tabSecurity) tabSecurity.style.display = (tabName === 'security') ? 'block' : 'none';
 
     if (btnAdd) btnAdd.classList.toggle('active', tabName === 'add');
     if (btnList) btnList.classList.toggle('active', tabName === 'list');
     if (btnServer) btnServer.classList.toggle('active', tabName === 'server');
+    if (btnSecurity) btnSecurity.classList.toggle('active', tabName === 'security');
 
     if (tabName === 'list') {
       renderBookList();
     } else if (tabName === 'server') {
       populateServerSettings();
+    } else if (tabName === 'security') {
+      initSecurityTab();
     }
   }
 
@@ -347,6 +416,127 @@ var DigiAdmin = (function() {
     DigiAuth.updateUserUI();
   }
 
+  // Initialize Security & Passphrase Tab
+  function initSecurityTab() {
+    const currentInput = document.getElementById('currentPassInput');
+    const newInput = document.getElementById('newPassInput');
+    const confirmInput = document.getElementById('confirmPassInput');
+    const msgEl = document.getElementById('changePassMsg');
+
+    if (currentInput) currentInput.value = '';
+    if (newInput) newInput.value = '';
+    if (confirmInput) confirmInput.value = '';
+    if (msgEl) {
+      msgEl.style.display = 'none';
+      msgEl.textContent = '';
+    }
+  }
+
+  // Handle Passphrase Change Form Submission
+  function submitChangePassphrase(e) {
+    if (e && e.preventDefault) e.preventDefault();
+
+    const currentInput = document.getElementById('currentPassInput');
+    const newInput = document.getElementById('newPassInput');
+    const confirmInput = document.getElementById('confirmPassInput');
+    const msgEl = document.getElementById('changePassMsg');
+
+    const enteredCurrent = currentInput ? currentInput.value.trim() : '';
+    const enteredNew = newInput ? newInput.value.trim() : '';
+    const enteredConfirm = confirmInput ? confirmInput.value.trim() : '';
+
+    const actualCurrent = getStoredPassphrase();
+
+    function showMsg(text, isError) {
+      if (msgEl) {
+        msgEl.style.display = 'block';
+        msgEl.style.color = isError ? '#C0392B' : '#27AE60';
+        msgEl.textContent = text;
+      }
+    }
+
+    // 1. Validate current passphrase
+    if (enteredCurrent !== actualCurrent) {
+      showMsg('Current passphrase does not match. Please verify and try again.', true);
+      if (currentInput) {
+        currentInput.value = '';
+        currentInput.focus();
+      }
+      return;
+    }
+
+    // 2. Validate new passphrase length
+    if (enteredNew.length < 6) {
+      showMsg('New passphrase must be at least 6 characters long.', true);
+      if (newInput) newInput.focus();
+      return;
+    }
+
+    // 3. Confirm matching
+    if (enteredNew !== enteredConfirm) {
+      showMsg('New passphrase and confirmation do not match.', true);
+      if (confirmInput) confirmInput.focus();
+      return;
+    }
+
+    // 4. Check if unchanged
+    if (enteredNew === actualCurrent) {
+      showMsg('The new passphrase cannot be identical to the current passphrase.', true);
+      return;
+    }
+
+    // 5. Save new passphrase
+    saveStoredPassphrase(enteredNew);
+    showMsg('✓ Passphrase updated successfully! Use this new passphrase for future logins.', false);
+
+    if (typeof window !== 'undefined' && window.DigiSecurity) {
+      window.DigiSecurity.showToast('Librarian passphrase updated successfully!');
+    }
+
+    // Reset input fields
+    if (currentInput) currentInput.value = '';
+    if (newInput) newInput.value = '';
+    if (confirmInput) confirmInput.value = '';
+  }
+
+  // Reset Passphrase to Factory Default ('rtmnu2026')
+  function resetPassphraseToDefault() {
+    const current = getStoredPassphrase();
+    if (current === DEFAULT_ADMIN_PASS) {
+      alert('The passphrase is already set to the default ("' + DEFAULT_ADMIN_PASS + '").');
+      return;
+    }
+
+    if (confirm('Are you sure you want to reset the Librarian Passphrase back to default ("' + DEFAULT_ADMIN_PASS + '")?')) {
+      resetStoredPassphrase();
+      initSecurityTab();
+      const msgEl = document.getElementById('changePassMsg');
+      if (msgEl) {
+        msgEl.style.display = 'block';
+        msgEl.style.color = '#27AE60';
+        msgEl.textContent = '✓ Passphrase has been reset to default (' + DEFAULT_ADMIN_PASS + ').';
+      }
+      if (typeof window !== 'undefined' && window.DigiSecurity) {
+        window.DigiSecurity.showToast('Librarian passphrase reset to default.');
+      }
+    }
+  }
+
+  // Toggle Password Field Visibility
+  function togglePasswordVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    if (input.type === 'password') {
+      input.type = 'text';
+      if (btn) btn.innerHTML = '&#128584;';
+      if (btn) btn.title = 'Hide passphrase';
+    } else {
+      input.type = 'password';
+      if (btn) btn.innerHTML = '&#128065;';
+      if (btn) btn.title = 'Show passphrase';
+    }
+  }
+
   function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/[&<>'"]/g, tag => ({
@@ -370,7 +560,13 @@ var DigiAdmin = (function() {
     renderBookList,
     deleteBook,
     exportBooksJson,
-    resetDownloadLimit
+    resetDownloadLimit,
+    initSecurityTab,
+    submitChangePassphrase,
+    resetPassphraseToDefault,
+    togglePasswordVisibility,
+    promptResetPassphrase,
+    getStoredPassphrase
   };
 })();
 

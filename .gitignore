@@ -20,3 +20,6 @@ server/*.class
 # Keep data and assets
 !data/
 !assets/
+
+__pycache__/
+*.pyc

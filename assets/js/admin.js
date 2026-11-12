@@ -254,10 +254,52 @@ var DigiAdmin = (function() {
       }
 
       const res = await fetch(endpoint);
-      if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to reach Vercel API`);
-      const data = await res.json();
+      let data = null;
+      try {
+        data = await res.json();
+      } catch (jsonErr) {}
 
-      if (data.storageStatus === 'not_connected') {
+      if (!data && !res.ok) {
+        throw new Error(`HTTP ${res.status}: Failed to reach Vercel API`);
+      }
+
+      if (data && (data.storageStatus === 'token_invalid' || (data.details && data.details.includes('Access denied')))) {
+        listContainer.innerHTML = `
+          <div style="background:#FFF0F0; border:1px solid #FFCDD2; color:#5D4037; padding:16px; border-radius:6px; font-size:0.86rem; line-height:1.6;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+              <span style="font-size:1.3rem;">🚫</span>
+              <strong style="color:#C0392B; font-size:0.95rem;">Vercel Blob Storage: Access Denied (Token Rejected)</strong>
+            </div>
+            <p style="margin:0 0 8px 0; color:#555;">
+              Vercel rejected the current storage token: <code>${escapeHtml(data.details || 'Access denied')}</code>
+            </p>
+            <p style="margin:0 0 10px 0; color:#666; font-size:0.82rem;">
+              Token inspected: <code>${escapeHtml(data.tokenPrefix || '')}</code> (${data.tokenLength || 0} characters)
+            </p>
+            <div style="background:#FFFFFF; border:1px solid #E0E0E0; border-radius:4px; padding:12px; margin-bottom:12px; font-size:0.82rem; color:#444;">
+              <strong>How to resolve in Vercel:</strong>
+              <ol style="margin:6px 0 0 20px; padding:0; line-height:1.6;">
+                <li>Open your <a href="https://vercel.com/dashboard" target="_blank" rel="noopener" style="color:#0056b3; font-weight:700; text-decoration:underline;">Vercel Dashboard ↗</a> &rarr; click on your project (<strong>history-archaeology-digilib</strong>).</li>
+                <li>Go to the <strong>Storage</strong> tab &rarr; open your Blob database &rarr; click the <strong>.env.local</strong> tab.</li>
+                <li>Copy the value of <strong>BLOB_READ_WRITE_TOKEN</strong> (make sure not to include quotation marks).</li>
+                <li>Go to Project <strong>Settings</strong> &rarr; <strong>Environment Variables</strong> &rarr; update <code>BLOB_READ_WRITE_TOKEN</code>.</li>
+                <li>Go to <strong>Deployments</strong> &rarr; click <strong>...</strong> on latest deployment &rarr; click <strong>Redeploy</strong>.</li>
+              </ol>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              <button type="button" class="search-btn" style="font-size:0.8rem; padding:6px 14px;" onclick="DigiAdmin.inspectVercelBlobs()">
+                &#8634; Check Connection Again
+              </button>
+              <span style="font-size:0.78rem; color:#777;">
+                (Local browser archive remains active; books you upload work immediately!)
+              </span>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (data && data.storageStatus === 'not_connected') {
         listContainer.innerHTML = `
           <div style="background:#FFF9E6; border:1px solid #FFE082; color:#5D4037; padding:16px; border-radius:6px; font-size:0.86rem; line-height:1.6;">
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">

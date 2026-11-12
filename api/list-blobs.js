@@ -14,7 +14,8 @@ export default async function handler(req, res) {
     return res.status(204).end();
   }
 
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+  const rawToken = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!rawToken || !rawToken.trim()) {
     return res.status(200).json({
       success: false,
       storageStatus: 'not_connected',
@@ -23,8 +24,11 @@ export default async function handler(req, res) {
     });
   }
 
+  // Strip any accidental whitespace or surrounding quotes
+  const cleanToken = rawToken.trim().replace(/^["']|["']$/g, '').trim();
+
   try {
-    const response = await list({ prefix: 'books/' });
+    const response = await list({ prefix: 'books/', token: cleanToken });
     const blobs = (response && response.blobs) || [];
 
     const formattedBlobs = blobs.map(b => ({
@@ -45,10 +49,15 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error('Error listing Vercel blobs:', err);
-    return res.status(500).json({
+    return res.status(200).json({
       success: false,
-      error: 'Failed to query Vercel Blob Storage',
-      details: err.message
+      storageStatus: 'token_invalid',
+      error: 'Vercel Blob Access Denied',
+      details: err.message,
+      tokenPrefix: cleanToken ? (cleanToken.substring(0, 16) + '...') : 'empty',
+      tokenLength: cleanToken.length,
+      message: 'Vercel rejected the storage token. Please verify the Blob store is linked to this project and redeploy.',
+      blobs: []
     });
   }
 }

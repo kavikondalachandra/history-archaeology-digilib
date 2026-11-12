@@ -27,7 +27,8 @@ export default async function handler(req, res) {
   }
 
   // Check if Vercel Blob is connected
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+  const rawToken = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!rawToken || !rawToken.trim()) {
     return res.status(200).json({
       success: false,
       storageStatus: 'not_connected',
@@ -35,6 +36,8 @@ export default async function handler(req, res) {
       message: 'Go to your Vercel Dashboard -> Storage -> Create Blob Database, and link it to this project.'
     });
   }
+
+  const cleanToken = rawToken.trim().replace(/^["']|["']$/g, '').trim();
 
   try {
     const { filename, fileBase64, title, author, category, era, format } = req.body || {};
@@ -56,10 +59,11 @@ export default async function handler(req, res) {
       contentType = 'application/msword';
     }
 
-    // Upload to Vercel Blob Storage
+    // Upload to Vercel Blob Storage with cleaned token
     const blob = await put(`books/${filename}`, buffer, {
       access: 'public',
-      contentType: contentType
+      contentType: contentType,
+      token: cleanToken
     });
 
     return res.status(200).json({
@@ -80,7 +84,9 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('Vercel Blob upload error:', error);
-    return res.status(500).json({
+    return res.status(200).json({
+      success: false,
+      storageStatus: 'upload_error',
       error: 'Upload failed',
       details: error.message
     });

@@ -21,6 +21,8 @@ function extractBlobToken(req) {
   // 2. Check standard environment variables
   const candidates = [
     process.env.BLOB_READ_WRITE_TOKEN,
+    process.env.HISTORY_ARCHAEOLOGY_DIGILIB_BLOB_READ_WRITE_TOKEN,
+    process.env.HISTORY_ARCHAEOLOGY_DIGILIB_BLOB_TOKEN,
     process.env.VERCEL_BLOB_READ_WRITE_TOKEN,
     process.env.STORE_READ_WRITE_TOKEN,
     process.env.BLOB_TOKEN,
@@ -87,12 +89,26 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.warn('Vercel Blob list warning:', err.message);
+
+    const diagnostics = {};
+    for (const [key, val] of Object.entries(process.env)) {
+      const ku = key.toUpperCase();
+      if (ku.includes('BLOB') || ku.includes('STORE') || ku.includes('DIGILIB') || ku.includes('HISTORY') || ku.includes('TOKEN')) {
+        diagnostics[key] = {
+          length: typeof val === 'string' ? val.length : 0,
+          prefix: typeof val === 'string' ? (val.substring(0, 18) + '...') : typeof val,
+          isToken: typeof val === 'string' && val.includes('vercel_blob_rw_')
+        };
+      }
+    }
+
     return res.status(200).json({
       success: true,
       storageStatus: validToken ? 'token_rejected' : 'local_database_active',
       storageEngine: 'IndexedDB & Library Repository',
       error: err.message,
       hasToken: !!validToken,
+      diagnostics,
       message: 'DigiLib Archive Engine is active and operational. Uploads, reading, and downloads work seamlessly.',
       blobs: []
     });

@@ -9,6 +9,63 @@ var DigiStorage = (function() {
   const DEFAULT_LOCAL_SERVER = 'http://localhost:8080';
   const BOOKS_CACHE_KEY = 'digilib_cached_books';
   const DOWNLOADS_KEY = 'digilib_daily_downloads';
+  const IDB_NAME = 'DigiLibDatabase';
+  const IDB_VERSION = 1;
+  const IDB_STORE = 'manuscripts';
+
+  // IndexedDB Storage for local manuscript files (supports files up to 500 MB)
+  function openIDB() {
+    return new Promise((resolve) => {
+      if (typeof window === 'undefined' || !window.indexedDB) {
+        return resolve(null);
+      }
+      try {
+        const req = window.indexedDB.open(IDB_NAME, IDB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(IDB_STORE)) {
+            db.createObjectStore(IDB_STORE, { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => resolve(null);
+      } catch(e) {
+        resolve(null);
+      }
+    });
+  }
+
+  async function saveFileToIDB(bookId, fileData) {
+    try {
+      const db = await openIDB();
+      if (!db) return false;
+      return new Promise((resolve) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        const store = tx.objectStore(IDB_STORE);
+        store.put({ id: bookId, fileData: fileData });
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => resolve(false);
+      });
+    } catch(e) {
+      return false;
+    }
+  }
+
+  async function getFileFromIDB(bookId) {
+    try {
+      const db = await openIDB();
+      if (!db) return null;
+      return new Promise((resolve) => {
+        const tx = db.transaction(IDB_STORE, 'readonly');
+        const store = tx.objectStore(IDB_STORE);
+        const req = store.get(bookId);
+        req.onsuccess = () => resolve(req.result ? req.result.fileData : null);
+        req.onerror = () => resolve(null);
+      });
+    } catch(e) {
+      return null;
+    }
+  }
 
   // Smart server detection based on hosting environment
   function getInitialServerUrl() {
@@ -270,6 +327,11 @@ var DigiStorage = (function() {
     let cloudUrl = null;
     let cloudSuccess = false;
 
+    // Save heavy file data into IndexedDB so localStorage never runs out of space
+    if (bookData.fileBase64) {
+      await saveFileToIDB(bookId, bookData.fileBase64);
+    }
+
     // 1. Try uploading to backend / Vercel Blob if available
     try {
       const serverUrl = currentServerUrl || '';
@@ -291,25 +353,27 @@ var DigiStorage = (function() {
           cloudSuccess = true;
           console.log('[DigiLib] Book saved to Vercel Blob Storage:', cloudUrl);
         } else if (resData.storageStatus === 'not_connected') {
-          console.warn('[DigiLib] Vercel Blob not connected yet. Saved locally.');
+          console.warn('[DigiLib] Vercel Blob not connected yet. Storing locally.');
         }
       }
     } catch (e) {
       console.warn('[DigiLib] Cloud storage upload skipped/offline. Storing in library archive:', e);
     }
 
-    // 2. Prepare the complete book object
+    // 2. Prepare lightweight metadata (without massive base64) for localStorage
     const newBook = {
       ...bookData,
       id: bookId,
-      filePath: cloudUrl || bookData.fileBase64 || bookData.filePath || `data/books/${bookData.filename || 'manuscript.pdf'}`,
+      filePath: cloudUrl || `data/books/${bookData.filename || 'manuscript.pdf'}`,
+      fileBase64: '', // Omit from localStorage to prevent QuotaExceededError
+      hasLocalBlob: !cloudUrl,
       downloads: 0,
       reads: 0,
       featured: false,
       cloudSynced: cloudSuccess
     };
 
-    // 3. ALWAYS store in browser storage cache so it appears immediately on site & across tabs
+    // 3. Store in localStorage catalogue
     try {
       const localCustom = JSON.parse(localStorage.getItem(BOOKS_CACHE_KEY) || '[]');
       const filtered = localCustom.filter(b => b.id !== bookId && b.title !== newBook.title);
@@ -387,7 +451,9 @@ var DigiStorage = (function() {
     setServerUrl,
     getServerUrl,
     isConnected,
-    getServerInfo
+    getServerInfo,
+    saveFileToIDB,
+    getFileFromIDB
   };
 })();
 

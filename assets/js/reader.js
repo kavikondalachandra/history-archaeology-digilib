@@ -54,7 +54,17 @@ var DigiReader = (function() {
 
     // Load file based on format
     const format = (book.format || 'pdf').toLowerCase();
-    const fileUrl = book.filePath;
+    let fileUrl = book.filePath;
+
+    // Check IndexedDB if manuscript was stored in local browser database
+    if (typeof window !== 'undefined' && window.DigiStorage && window.DigiStorage.getFileFromIDB) {
+      try {
+        const idbData = await window.DigiStorage.getFileFromIDB(book.id);
+        if (idbData) {
+          fileUrl = idbData;
+        }
+      } catch (e) {}
+    }
 
     try {
       if (format === 'pdf') {
@@ -134,11 +144,23 @@ var DigiReader = (function() {
       throw new Error('Mammoth.js document parser is not loaded');
     }
 
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Failed to load file: ${response.statusText}`);
+    let arrayBuffer;
+    if (typeof url === 'string' && url.startsWith('data:')) {
+      const base64 = url.split(',')[1];
+      const binaryString = window.atob(base64);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      arrayBuffer = bytes.buffer;
+    } else {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to load file: ${response.statusText}`);
+      }
+      arrayBuffer = await response.arrayBuffer();
     }
-    const arrayBuffer = await response.arrayBuffer();
 
     const result = await window.mammoth.convertToHtml({ arrayBuffer: arrayBuffer });
     const html = result.value;
@@ -156,11 +178,17 @@ var DigiReader = (function() {
 
   // Load and Render DOC (RTF / text fallback)
   async function loadDoc(url, container) {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Failed to load document: ${response.statusText}`);
+    let text = '';
+    if (typeof url === 'string' && url.startsWith('data:')) {
+      const base64 = url.split(',')[1];
+      text = window.atob(base64);
+    } else {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to load document: ${response.statusText}`);
+      }
+      text = await response.text();
     }
-    const text = await response.text();
 
     // Clean simple RTF tags if RTF
     let cleanText = text;

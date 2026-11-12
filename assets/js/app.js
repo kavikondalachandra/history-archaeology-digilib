@@ -328,8 +328,15 @@ var DigiApp = (function() {
       const downloadUrl = `${storage.getServerUrl()}/api/books/download?id=${book.id}&email=${encodeURIComponent(user.email)}&token=${user.token || ''}`;
       window.location.href = downloadUrl;
     } else {
+      let fileHref = book.filePath;
+      if (storage && storage.getFileFromIDB) {
+        try {
+          const idbData = await storage.getFileFromIDB(book.id);
+          if (idbData) fileHref = idbData;
+        } catch(e) {}
+      }
       const a = document.createElement('a');
-      a.href = book.filePath;
+      a.href = fileHref;
       a.download = `${book.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.${book.format || 'pdf'}`;
       document.body.appendChild(a);
       a.click();

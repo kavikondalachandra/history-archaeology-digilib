@@ -35,6 +35,8 @@ function extractBlobToken(req) {
   // 2. Check standard environment variables
   const candidates = [
     process.env.BLOB_READ_WRITE_TOKEN,
+    process.env.HISTORY_ARCHAEOLOGY_DIGILIB_BLOB_READ_WRITE_TOKEN,
+    process.env.HISTORY_ARCHAEOLOGY_DIGILIB_BLOB_TOKEN,
     process.env.VERCEL_BLOB_READ_WRITE_TOKEN,
     process.env.STORE_READ_WRITE_TOKEN,
     process.env.BLOB_TOKEN,

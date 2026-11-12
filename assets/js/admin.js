@@ -352,7 +352,42 @@ var DigiAdmin = (function() {
         throw new Error(`HTTP ${res.status}: Failed to reach Vercel API`);
       }
 
-      if (data && (data.storageStatus === 'local_database_active' || data.storageStatus === 'token_invalid' || (data.details && data.details.includes('Access denied')))) {
+      if (data && (data.storageStatus === 'token_rejected' || data.error || (data.diagnostics && data.diagnostics.BLOB_READ_WRITE_TOKEN && !data.diagnostics.BLOB_READ_WRITE_TOKEN.isToken))) {
+        const storeId = (data.diagnostics && data.diagnostics.BLOB_STORE_ID && data.diagnostics.BLOB_STORE_ID.prefix) ? data.diagnostics.BLOB_STORE_ID.prefix : 'store_puA1l5XCorny...';
+        listContainer.innerHTML = `
+          <div style="background:#FFF9E6; border:1px solid #FFE082; color:#795548; padding:16px; border-radius:6px; font-size:0.86rem; line-height:1.6;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+              <span style="font-size:1.3rem;">⚠️</span>
+              <strong style="color:#B78103; font-size:0.95rem;">Vercel Blob Store: history-archaeology-digilib-blob Detected</strong>
+            </div>
+            <p style="margin:0 0 10px 0; color:#5D4037;">
+              Your store <strong>history-archaeology-digilib-blob</strong> (Store ID: <code>${escapeHtml(storeId)}</code>) is recognized. However, Vercel requires the Read-Write Token (<code>vercel_blob_rw_...</code>) to list and display uploaded files.
+            </p>
+            <div style="background:#FFFFFF; border:1px solid #FFE082; border-radius:4px; padding:12px; margin-bottom:12px; font-size:0.83rem; color:#4E342E;">
+              <strong>How to connect in 30 seconds:</strong>
+              <ol style="margin:6px 0 0 18px; padding:0; line-height:1.6;">
+                <li>Open your <a href="https://vercel.com/dashboard" target="_blank" rel="noopener" style="color:#B78103; font-weight:700; text-decoration:underline;">Vercel Dashboard &rarr; Storage &rarr; history-archaeology-digilib-blob ↗</a>.</li>
+                <li>Click <strong>Settings</strong> &rarr; Under <strong>Read-Write Token</strong>, click <strong>Show / Copy</strong> (starts with <code>vercel_blob_rw_</code>).</li>
+                <li>Paste it in the <strong>Vercel Blob Storage Token</strong> box above and click <strong>Save &amp; Reconnect</strong>.</li>
+              </ol>
+              <div style="margin-top:8px; font-size:0.8rem; color:#795548;">
+                <em>Alternative:</em> You can also copy the public URL of any uploaded file from the Vercel Blob <strong>Browser</strong> tab and paste it into the <strong>Link Direct Vercel Blob / PDF URL</strong> section below to display it immediately on the dashboard!
+              </div>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              <button type="button" class="search-btn" style="font-size:0.8rem; padding:6px 14px;" onclick="DigiAdmin.inspectVercelBlobs()">
+                &#8634; Check Again
+              </button>
+              <a href="https://vercel.com/dashboard" target="_blank" rel="noopener" class="nav-btn" style="font-size:0.8rem; padding:6px 12px; text-decoration:none;">
+                Open Vercel Storage Dashboard &#8599;
+              </a>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (data && (data.storageStatus === 'local_database_active' || (data.details && data.details.includes('Access denied')))) {
         listContainer.innerHTML = `
           <div style="background:#EBF7EE; border:1px solid #C3E6CB; color:#155724; padding:16px; border-radius:6px; font-size:0.86rem; line-height:1.6;">
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">

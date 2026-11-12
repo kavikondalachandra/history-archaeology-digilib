@@ -414,6 +414,26 @@ var DigiApp = (function() {
         if (modal) modal.classList.remove('active');
       });
     });
+
+    const emailInput = document.getElementById('authEmailInput');
+    if (emailInput) {
+      emailInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleSendOtp();
+        }
+      });
+    }
+
+    const otpInput = document.getElementById('authOtpInput');
+    if (otpInput) {
+      otpInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleVerifyOtp();
+        }
+      });
+    }
   }
 
   // Email Authentication Modal
@@ -429,7 +449,11 @@ var DigiApp = (function() {
     const emailInput = document.getElementById('authEmailInput');
     const otpInput = document.getElementById('authOtpInput');
     const demoHint = document.getElementById('demoOtpHint');
+    const errorEl = document.getElementById('authEmailError');
+    const otpErrorEl = document.getElementById('authOtpError');
 
+    if (errorEl) errorEl.textContent = '';
+    if (otpErrorEl) otpErrorEl.textContent = '';
     if (stepEmail) stepEmail.style.display = 'block';
     if (stepOtp) stepOtp.style.display = 'none';
     if (emailInput) emailInput.value = '';
@@ -437,13 +461,20 @@ var DigiApp = (function() {
     if (demoHint) demoHint.style.display = 'none';
 
     modal.classList.add('active');
+    if (emailInput) setTimeout(() => emailInput.focus(), 150);
   }
 
   async function handleSendOtp() {
-    const email = document.getElementById('authEmailInput').value;
+    const emailInput = document.getElementById('authEmailInput');
+    const email = (emailInput ? emailInput.value : '').trim();
     const btn = document.getElementById('btnSendOtp');
     const errorEl = document.getElementById('authEmailError');
     if (errorEl) errorEl.textContent = '';
+
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      if (errorEl) errorEl.textContent = 'Please enter a valid personal or university email address.';
+      return;
+    }
 
     btn.disabled = true;
     btn.textContent = 'Sending Verification Code...';
@@ -456,6 +487,12 @@ var DigiApp = (function() {
       document.getElementById('authStepOtp').style.display = 'block';
       document.getElementById('otpTargetEmail').textContent = email;
 
+      const otpField = document.getElementById('authOtpInput');
+      if (otpField) {
+        otpField.value = '';
+        setTimeout(() => otpField.focus(), 150);
+      }
+
       if (res && res.demoOtp) {
         const hint = document.getElementById('demoOtpHint');
         const codeEl = document.getElementById('demoOtpCode');
@@ -463,7 +500,7 @@ var DigiApp = (function() {
         if (hint) hint.style.display = 'block';
       }
     } catch (err) {
-      if (errorEl) errorEl.textContent = err.message;
+      if (errorEl) errorEl.textContent = err.message || 'Unable to send verification code. Please try again.';
     } finally {
       btn.disabled = false;
       btn.textContent = 'Send Verification Code (OTP)';

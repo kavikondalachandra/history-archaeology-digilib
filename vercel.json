@@ -3,6 +3,18 @@
   "cleanUrls": true,
   "routes": [
     {
+      "src": "/api/auth/send-otp",
+      "dest": "/api/send-otp"
+    },
+    {
+      "src": "/api/auth/verify-otp",
+      "dest": "/api/verify-otp"
+    },
+    {
+      "src": "/api/books/download",
+      "dest": "/api/download"
+    },
+    {
       "src": "/api/books/upload",
       "dest": "/api/upload-blob"
     },

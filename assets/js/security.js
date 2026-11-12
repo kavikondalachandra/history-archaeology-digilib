@@ -23,8 +23,34 @@ var DigiSecurity = (function() {
       return false;
     });
 
-    // 2. Disable Keyboard Shortcuts: Print, Save, Inspect, PrintScreen
+    // 2. Disable Keyboard Shortcuts: Print, Save, Inspect, PrintScreen, Copy, Paste, Cut
     document.addEventListener('keydown', function(e) {
+      // Ctrl+C or Cmd+C (Copy)
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
+        e.preventDefault();
+        showToast('Copying content is disabled for digital archive preservation.');
+        return false;
+      }
+      // Ctrl+V or Cmd+V (Paste)
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
+        e.preventDefault();
+        showToast('Pasting is disabled by University Archival Security Policy.');
+        return false;
+      }
+      // Ctrl+X or Cmd+X (Cut)
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'x' || e.key === 'X')) {
+        e.preventDefault();
+        showToast('Cut action is disabled by University Archival Security Policy.');
+        return false;
+      }
+      // Ctrl+A or Cmd+A (Select All outside form inputs)
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
+        const isInputField = e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA');
+        if (!isInputField) {
+          e.preventDefault();
+          return false;
+        }
+      }
       // Ctrl+P or Cmd+P (Print)
       if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
         e.preventDefault();
@@ -56,7 +82,25 @@ var DigiSecurity = (function() {
       }
     });
 
-    // 3. Disable Text Drag & Select in protected elements
+    // 3. Disable Clipboard Copy, Paste, and Cut Events
+    document.addEventListener('copy', function(e) {
+      e.preventDefault();
+      showToast('Copying content is disabled for digital archive preservation.');
+      return false;
+    });
+
+    document.addEventListener('paste', function(e) {
+      e.preventDefault();
+      showToast('Pasting is disabled by University Archival Security Policy.');
+      return false;
+    });
+
+    document.addEventListener('cut', function(e) {
+      e.preventDefault();
+      return false;
+    });
+
+    // 4. Disable Text Drag & Select in protected elements
     document.addEventListener('dragstart', function(e) {
       if (e.target.closest('.reader-modal') || e.target.closest('.book-card')) {
         e.preventDefault();

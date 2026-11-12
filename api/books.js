@@ -8,6 +8,15 @@ import path from 'path';
 
 let dynamicBooks = [];
 
+export function addDynamicBook(book) {
+  if (book && (book.title || book.id)) {
+    dynamicBooks = dynamicBooks.filter(b => b.id !== book.id && b.title !== book.title);
+    dynamicBooks.unshift(book);
+    return true;
+  }
+  return false;
+}
+
 export default function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -21,9 +30,7 @@ export default function handler(req, res) {
   if (req.method === 'POST') {
     try {
       const book = req.body;
-      if (book && (book.title || book.id)) {
-        dynamicBooks = dynamicBooks.filter(b => b.id !== book.id && b.title !== book.title);
-        dynamicBooks.unshift(book);
+      if (addDynamicBook(book)) {
         return res.status(200).json({ success: true, count: dynamicBooks.length });
       }
     } catch (e) {

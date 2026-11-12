@@ -132,216 +132,72 @@ var DigiStorage = (function() {
     return false;
   }
 
-  // Fallback catalogue if network or static fetch encounters issues
-  function getDefaultCatalogue() {
-    return [
-      {
-        id: "book-001",
-        title: "The Wonder That Was India: A Survey of the Culture and Heritage",
-        author: "Prof. A. L. Basham",
-        category: "Ancient Indian History",
-        era: "Prehistory to Early Islamic Contact",
-        year: "1954 / 2026 Archive",
-        format: "pdf",
-        filePath: "data/books/wonder_that_was_india.pdf",
-        fileSize: "2.4 MB",
-        pages: 568,
-        language: "English",
-        coverImage: "assets/images/covers/cover_wonder_india.svg",
-        description: "A landmark scholarly treatise offering a comprehensive survey of the history, society, religion, philosophy, art, and literature of ancient India before the coming of the Muslims. Essential reading for students of Ancient Indian History, Culture & Archaeology.",
-        tags: ["Indus Valley", "Vedic Society", "Mauryan Dynasty", "Guptas", "Philosophy"],
-        downloads: 142,
-        reads: 1280,
-        featured: true
-      },
-      {
-        id: "book-002",
-        title: "Archaeological Excavations and Megalithic Culture of Vidarbha",
-        author: "Department of Ancient Indian History, Culture & Archaeology",
-        category: "Archaeology & Excavations",
-        era: "Iron Age & Protohistory (1000 BCE - 300 CE)",
-        year: "2024",
-        format: "docx",
-        filePath: "data/books/archaeological_excavations_vidarbha.docx",
-        fileSize: "1.1 MB",
-        pages: 312,
-        language: "English",
-        coverImage: "assets/images/covers/cover_excavations_vidarbha.svg",
-        description: "Comprehensive archaeological excavation monograph detailing the cairn stone circles, iron-smelting kilns of Naikund, burial assemblages of Mahurjhari, and stratified sequences in Vidarbha under the research aegis of Rashtrasant Tukadoji Maharaj Nagpur University.",
-        tags: ["Naikund", "Mahurjhari", "Megaliths", "Iron Smelting", "Vidarbha", "Excavations"],
-        downloads: 98,
-        reads: 945,
-        featured: true
-      },
-      {
-        id: "book-003",
-        title: "Coins of Ancient India: From the Earliest Times to the 7th Century CE",
-        author: "Sir Alexander Cunningham",
-        category: "Numismatics & Ancient Coins",
-        era: "6th C. BCE to 7th C. CE",
-        year: "1891 / Digital Facsimile",
-        format: "pdf",
-        filePath: "data/books/coins_of_ancient_india.pdf",
-        fileSize: "3.8 MB",
-        pages: 184,
-        language: "English",
-        coverImage: "assets/images/covers/cover_coins_ancient_india.svg",
-        description: "Foundational classic in Indian numismatics covering punch-marked silver and copper punch-marked issues, cast and tribal coinages of Ujjain, Eran, Taxila, and the imperial gold dinars of the Kushanas and Guptas.",
-        tags: ["Numismatics", "Punch-Marked Coins", "Satavahana", "Gupta Dinars", "Kushana"],
-        downloads: 76,
-        reads: 630,
-        featured: true
-      },
-      {
-        id: "book-004",
-        title: "Corpus Inscriptionum: Major Rock and Pillar Edicts of Emperor Ashoka",
-        author: "Epigraphical Research Division, RTMNU",
-        category: "Epigraphy & Inscriptions",
-        era: "Mauryan Empire (272-232 BCE)",
-        year: "2023",
-        format: "doc",
-        filePath: "data/books/inscriptions_of_ashoka.doc",
-        fileSize: "850 KB",
-        pages: 142,
-        language: "English & Prakrit (Brahmi)",
-        coverImage: "assets/images/covers/cover_inscriptions_ashoka.svg",
-        description: "Critically edited readings, translations, and paleographical analyses of the 14 Major Rock Edicts, 7 Pillar Inscriptions, and Minor Rock Edicts of Devanampriya Priyadarsi Ashoka Maurya.",
-        tags: ["Ashoka", "Brahmi Script", "Prakrit", "Epigraphy", "Dhamma"],
-        downloads: 115,
-        reads: 890,
-        featured: false
-      },
-      {
-        id: "book-005",
-        title: "Indian Temple Architecture and Iconography: Evolution of Forms",
-        author: "Dr. V. S. Agrawala",
-        category: "Temple Architecture & Iconography",
-        era: "Gupta to Late Medieval (4th - 13th C. CE)",
-        year: "1965 / Digital Edition",
-        format: "pdf",
-        filePath: "data/books/wonder_that_was_india.pdf",
-        fileSize: "4.2 MB",
-        pages: 420,
-        language: "English",
-        coverImage: "assets/images/covers/cover_temple_architecture.svg",
-        description: "An authoritative exposition tracing the structural development of Indian shrines from flat-roofed Gupta prototypes to the soaring sikhara temples of Khajuraho, Bhubaneswar, and Dravida gopurams.",
-        tags: ["Temple Architecture", "Nagara", "Dravida", "Vesara", "Sculpture", "Iconography"],
-        downloads: 64,
-        reads: 580,
-        featured: false
-      },
-      {
-        id: "book-006",
-        title: "Harappa and Mohenjo-Daro: Official Reports of the Archaeological Survey of India",
-        author: "Sir John Marshall & Archaeological Survey of India",
-        category: "Prehistory & Indus Valley",
-        era: "Mature Harappan (2600-1900 BCE)",
-        year: "1931 / Facsimile Edition",
-        format: "pdf",
-        filePath: "data/books/wonder_that_was_india.pdf",
-        fileSize: "5.6 MB",
-        pages: 724,
-        language: "English",
-        coverImage: "assets/images/covers/cover_indus_valley.svg",
-        description: "The seminal excavation report on the discovery of the Bronze Age Indus Valley Civilization, examining the Great Bath, granaries, drainage systems, steatite seals, and proto-historic urban settlements.",
-        tags: ["Harappa", "Mohenjo-Daro", "Indus Valley", "Protohistory", "Seals"],
-        downloads: 189,
-        reads: 1420,
-        featured: true
-      },
-      {
-        id: "book-007",
-        title: "Heritage of Vidarbha and the Vakatakas: Mansar, Ramtek & Ajanta Connections",
-        author: "RTMNU Archaeological Research Cell",
-        category: "Heritage of Vidarbha & Central India",
-        era: "Vakataka Dynasty (3rd - 5th C. CE)",
-        year: "2025",
-        format: "docx",
-        filePath: "data/books/archaeological_excavations_vidarbha.docx",
-        fileSize: "1.8 MB",
-        pages: 248,
-        language: "English & Marathi",
-        coverImage: "assets/images/covers/cover_vakataka_heritage.svg",
-        description: "Explores the political, religious, and architectural legacy of the Vakatakas in Vidarbha, with special emphasis on the excavated palace complexes and temple terraces of Mansar (Pravarapura), Ramagiri (Ramtek), and caves of Ajanta.",
-        tags: ["Vakataka", "Mansar", "Ramtek", "Vidarbha", "Nagpur Heritage"],
-        downloads: 110,
-        reads: 780,
-        featured: true
-      },
-      {
-        id: "book-008",
-        title: "Indian Epigraphy and Paleography: Evolution of Scripts and Manuscripts",
-        author: "Prof. D. C. Sircar",
-        category: "Epigraphy & Inscriptions",
-        era: "Antiquity to 12th C. CE",
-        year: "1965",
-        format: "pdf",
-        filePath: "data/books/coins_of_ancient_india.pdf",
-        fileSize: "3.1 MB",
-        pages: 482,
-        language: "English",
-        coverImage: "assets/images/covers/cover_sanskrit_epigraphy.svg",
-        description: "Comprehensive handbook covering decipherment of ancient Indian scripts, eras (Vikrama, Saka, Gupta), copper-plate charters, royal seals, and methodology of inscriptional recording.",
-        tags: ["Epigraphy", "Paleography", "Brahmi", "Kharosthi", "D.C. Sircar"],
-        downloads: 58,
-        reads: 510,
-        featured: false
-      },
-      {
-        id: "book-010",
-        title: "Descriptive Catalogue of Sanskrit Manuscripts & Palm-Leaf Texts",
-        author: "Department of Sanskrit, Epigraphy & Ancient Manuscripts",
-        category: "Sanskrit & Manuscripts",
-        era: "Classical to Medieval Period",
-        year: "2025 Archive Edition",
-        format: "pdf",
-        filePath: "data/books/wonder_that_was_india.pdf",
-        fileSize: "3.4 MB",
-        pages: 380,
-        language: "Sanskrit & English",
-        coverImage: "assets/images/covers/cover_sanskrit_epigraphy.svg",
-        description: "Comprehensive descriptive catalogue and critical textual apparatus of rare birch-bark, palm-leaf, and paper manuscripts preserved across central Indian archives.",
-        tags: ["Sanskrit", "Manuscripts", "Palm Leaf", "Brahmi", "Paleography", "Vedic Texts"],
-        downloads: 82,
-        reads: 720,
-        featured: true
-      },
-      {
-        id: "book-1794379266027",
-        title: "Excavation of Buddhist Stupas at Mansar",
-        author: "Prof. AIHC&A Research Team",
-        category: "Archaeology & Excavations",
-        era: "Vakataka Period (5th C. CE)",
-        year: "2026",
-        format: "docx",
-        filePath: "data/books/mansar_stupas.docx",
-        fileSize: "1.4 MB",
-        pages: 100,
-        language: "English",
-        coverImage: "assets/images/covers/cover_excavations_vidarbha.svg",
-        description: "Monograph detailing the discovery of brick stupas and Buddhist monastic structures at Mansar.",
-        tags: ["New Addition", "Research Archive", "Archaeology & Excavations", "Mansar", "Vakataka"],
-        downloads: 15,
-        reads: 340,
-        featured: true,
-        isNew: true
+  const BLOB_TOKEN_KEY = 'digilib_blob_token';
+  const DUMMY_BOOK_IDS = new Set([
+    'book-001', 'book-002', 'book-003', 'book-004', 'book-005',
+    'book-006', 'book-007', 'book-008', 'book-010', 'book-1794379266027'
+  ]);
+  const DUMMY_TITLE_SUBSTRINGS = [
+    'wonder that was india',
+    'archaeological excavations and megalithic culture of vidarbha',
+    'coins of ancient india',
+    'corpus inscriptionum',
+    'indian temple architecture',
+    'harappa and mohenjo-daro',
+    'heritage of vidarbha and the vakatakas',
+    'indian epigraphy and paleography',
+    'descriptive catalogue of sanskrit manuscripts',
+    'excavation of buddhist stupas at mansar'
+  ];
+
+  function isDummyBook(book) {
+    if (!book) return false;
+    if (book.id && DUMMY_BOOK_IDS.has(book.id)) return true;
+    const titleLower = (book.title || '').toLowerCase();
+    for (const sub of DUMMY_TITLE_SUBSTRINGS) {
+      if (titleLower.includes(sub)) return true;
+    }
+    return false;
+  }
+
+  function getBlobToken() {
+    try {
+      return localStorage.getItem(BLOB_TOKEN_KEY) || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function setBlobToken(token) {
+    try {
+      if (token && typeof token === 'string' && token.trim()) {
+        localStorage.setItem(BLOB_TOKEN_KEY, token.trim());
+      } else {
+        localStorage.removeItem(BLOB_TOKEN_KEY);
       }
-    ];
+    } catch (e) {}
+  }
+
+  // Fallback catalogue: clean empty array (dummy archival research manuscripts removed)
+  function getDefaultCatalogue() {
+    return [];
   }
 
   // Get Books Catalogue (combines remote / local / initial JSON)
   async function getBooks() {
     let books = [];
     
-    // 1. Try fetching from active server or relative data/books.json
+    // 1. Try fetching from active server /api/books or relative data/books.json
     try {
       let fetchUrl = 'data/books.json';
       if (isServerConnected && currentServerUrl && !currentServerUrl.includes('github.io')) {
-        fetchUrl = `${currentServerUrl}/data/books.json`;
+        fetchUrl = `${currentServerUrl}/api/books`;
+      } else if (!currentServerUrl.includes('github.io') && window.location.hostname.includes('vercel.app')) {
+        fetchUrl = '/api/books';
       }
       
       let resp = await fetch(fetchUrl, { cache: 'no-store' });
-      if (!resp.ok && fetchUrl !== 'data/books.json') {
+      if (!resp.ok) {
         resp = await fetch('data/books.json', { cache: 'no-store' });
       }
       if (resp.ok) {
@@ -356,7 +212,7 @@ var DigiStorage = (function() {
     }
 
     // Fallback: If network failed, use embedded default books
-    if (!books || books.length === 0) {
+    if (!books || !Array.isArray(books) || books.length === 0) {
       books = getDefaultCatalogue();
     }
 
@@ -366,7 +222,12 @@ var DigiStorage = (function() {
       if (currentServerUrl && !currentServerUrl.includes('github.io')) {
         blobEndpoint = `${currentServerUrl.replace(/\/+$/, '')}/api/list-blobs`;
       }
-      const blobResp = await fetch(blobEndpoint, { cache: 'no-store' });
+      const token = getBlobToken();
+      const headers = {};
+      if (token) {
+        headers['x-blob-token'] = token;
+      }
+      const blobResp = await fetch(blobEndpoint, { headers, cache: 'no-store' });
       if (blobResp.ok) {
         const blobData = await blobResp.json();
         if (blobData && Array.isArray(blobData.blobs) && blobData.blobs.length > 0) {
@@ -415,11 +276,12 @@ var DigiStorage = (function() {
                 language: 'English',
                 coverImage: cover,
                 description: `Digital research manuscript stored on Vercel Cloud Storage (${rawFilename}). Available for unrestricted reading and academic download.`,
-                tags: [inferredCat, 'Vercel Cloud', 'Research Monograph'],
+                tags: [inferredCat, 'Vercel Cloud', 'Uploaded Manuscript'],
                 downloads: 0,
                 reads: 18,
                 featured: true,
-                isCloudBlob: true
+                isCloudBlob: true,
+                isNew: true
               });
             }
           }
@@ -429,20 +291,25 @@ var DigiStorage = (function() {
       console.warn('[DigiLib] Cloud blob sync skipped:', blobErr);
     }
 
-    // 3. Merge with locally added custom books if in client/static mode
+    // 3. Purge any dummy books and merge with custom uploaded books
     try {
-      const localCustom = JSON.parse(localStorage.getItem(BOOKS_CACHE_KEY) || '[]');
-      if (Array.isArray(localCustom) && localCustom.length > 0) {
+      let localCustom = JSON.parse(localStorage.getItem(BOOKS_CACHE_KEY) || '[]');
+      if (Array.isArray(localCustom)) {
+        // Strip out any dummy sample books
+        localCustom = localCustom.filter(b => !isDummyBook(b));
+        localStorage.setItem(BOOKS_CACHE_KEY, JSON.stringify(localCustom));
+
         const existingIds = new Set(books.map(b => b.id));
         for (const cb of localCustom) {
-          if (!existingIds.has(cb.id)) {
+          if (!existingIds.has(cb.id) && !isDummyBook(cb)) {
             books.unshift(cb);
           }
         }
       }
     } catch (e) {}
 
-    return books;
+    // Final filter to ensure no dummy sample books slip through
+    return books.filter(b => !isDummyBook(b));
   }
 
   // Add a newly uploaded book
@@ -464,10 +331,14 @@ var DigiStorage = (function() {
         targetEndpoint = `${serverUrl.replace(/\/+$/, '')}/api/upload-blob`;
       }
 
+      const token = getBlobToken();
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['x-blob-token'] = token;
+
       const resp = await fetch(targetEndpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bookData)
+        headers: headers,
+        body: JSON.stringify({ ...bookData, token: token || undefined })
       });
 
       if (resp.ok) {
@@ -498,12 +369,27 @@ var DigiStorage = (function() {
       isNew: true
     };
 
-    // 3. Store in localStorage catalogue
+    // 3. Inform backend /api/books so in-memory dynamic catalogue keeps it
     try {
-      const localCustom = JSON.parse(localStorage.getItem(BOOKS_CACHE_KEY) || '[]');
-      const filtered = localCustom.filter(b => b.id !== bookId && b.title !== newBook.title);
-      filtered.unshift(newBook);
-      localStorage.setItem(BOOKS_CACHE_KEY, JSON.stringify(filtered));
+      const serverUrl = currentServerUrl || '';
+      let booksEndpoint = '/api/books';
+      if (serverUrl && !serverUrl.includes('github.io')) {
+        booksEndpoint = `${serverUrl.replace(/\/+$/, '')}/api/books`;
+      }
+      await fetch(booksEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newBook)
+      });
+    } catch (e) {}
+
+    // 4. Store in localStorage catalogue
+    try {
+      let localCustom = JSON.parse(localStorage.getItem(BOOKS_CACHE_KEY) || '[]');
+      if (!Array.isArray(localCustom)) localCustom = [];
+      localCustom = localCustom.filter(b => b.id !== bookId && b.title !== newBook.title && !isDummyBook(b));
+      localCustom.unshift(newBook);
+      localStorage.setItem(BOOKS_CACHE_KEY, JSON.stringify(localCustom));
     } catch (e) {
       console.error('[DigiLib] LocalStorage write error:', e);
     }
@@ -579,7 +465,10 @@ var DigiStorage = (function() {
     getServerInfo,
     saveFileToIDB,
     getFileFromIDB,
-    deleteFileFromIDB
+    deleteFileFromIDB,
+    getBlobToken,
+    setBlobToken,
+    isDummyBook
   };
 })();
 

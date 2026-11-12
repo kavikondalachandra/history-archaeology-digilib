@@ -181,6 +181,10 @@ var DigiAdmin = (function() {
     if (serverInput) {
       serverInput.value = DigiStorage.getServerUrl();
     }
+    const tokenInput = document.getElementById('adminBlobTokenInput');
+    if (tokenInput && DigiStorage.getBlobToken) {
+      tokenInput.value = DigiStorage.getBlobToken();
+    }
     const info = DigiStorage.getServerInfo();
     const statusText = document.getElementById('adminServerStatusInfo');
     if (statusText) {
@@ -193,10 +197,85 @@ var DigiAdmin = (function() {
     }
   }
 
+  function toggleBlobTokenVisibility() {
+    const input = document.getElementById('adminBlobTokenInput');
+    if (input) {
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+  }
+
+  async function addDirectBlobUrl() {
+    const titleInput = document.getElementById('directBlobTitle');
+    const catInput = document.getElementById('directBlobCategory');
+    const urlInput = document.getElementById('directBlobUrl');
+    if (!titleInput || !urlInput) return;
+
+    const title = titleInput.value.trim();
+    const category = catInput.value;
+    const url = urlInput.value.trim();
+
+    if (!title || !url) {
+      alert('Please enter both a title and a valid Vercel Blob URL or relative path.');
+      return;
+    }
+
+    const ext = url.split('.').pop().toLowerCase().split('?')[0];
+    const format = ['docx', 'doc'].includes(ext) ? ext : 'pdf';
+
+    let cover = 'assets/images/covers/cover_wonder_india.svg';
+    if (category.includes('Excavation') || category.includes('Archaeology')) cover = 'assets/images/covers/cover_excavations_vidarbha.svg';
+    else if (category.includes('Coin') || category.includes('Numismatics')) cover = 'assets/images/covers/cover_coins_ancient_india.svg';
+    else if (category.includes('Inscription') || category.includes('Epigraphy')) cover = 'assets/images/covers/cover_inscriptions_ashoka.svg';
+    else if (category.includes('Temple') || category.includes('Architecture')) cover = 'assets/images/covers/cover_temple_architecture.svg';
+    else if (category.includes('Vidarbha')) cover = 'assets/images/covers/cover_vakataka_heritage.svg';
+    else if (category.includes('Prehistory') || category.includes('Indus')) cover = 'assets/images/covers/cover_indus_valley.svg';
+    else if (category.includes('Sanskrit')) cover = 'assets/images/covers/cover_sanskrit_epigraphy.svg';
+
+    const bookPayload = {
+      title,
+      author: 'Department Faculty / Scholar',
+      category,
+      era: 'Ancient Period',
+      year: new Date().getFullYear().toString(),
+      format,
+      filePath: url,
+      fileSize: '2.5 MB',
+      pages: 150,
+      language: 'English',
+      coverImage: cover,
+      description: `Manuscript hosted on Vercel Cloud Storage (${title}). Available for immediate reading and download.`,
+      tags: [category, 'Vercel Cloud', 'Uploaded Manuscript'],
+      isCloudBlob: true,
+      isNew: true
+    };
+
+    try {
+      await DigiStorage.addBook(bookPayload);
+      titleInput.value = '';
+      urlInput.value = '';
+      if (typeof window !== 'undefined' && window.DigiApp) {
+        if (window.DigiApp.closeModal) window.DigiApp.closeModal('adminModal');
+        if (window.DigiApp.setCategory) window.DigiApp.setCategory(category);
+        if (window.DigiApp.loadBooks) await window.DigiApp.loadBooks();
+      }
+      if (typeof window !== 'undefined' && window.DigiSecurity) {
+        window.DigiSecurity.showToast(`Manuscript "${title}" linked to Vercel Storage!`);
+      }
+      alert(`Success! "${title}" is now added to the Digital Library and visible on the dashboard under "${category}".`);
+    } catch (err) {
+      alert('Failed to add manuscript: ' + err.message);
+    }
+  }
+
   async function saveServerSettingsFromAdmin() {
     const serverInput = document.getElementById('adminServerUrlInput');
     if (!serverInput) return;
     const url = serverInput.value.trim();
+
+    const tokenInput = document.getElementById('adminBlobTokenInput');
+    if (tokenInput && DigiStorage.setBlobToken) {
+      DigiStorage.setBlobToken(tokenInput.value.trim());
+    }
 
     const saveBtn = document.getElementById('btnSaveAdminServer');
     if (saveBtn) {
@@ -259,7 +338,11 @@ var DigiAdmin = (function() {
         }
       }
 
-      const res = await fetch(endpoint);
+      const token = storage && storage.getBlobToken ? storage.getBlobToken() : '';
+      const headers = {};
+      if (token) headers['x-blob-token'] = token;
+
+      const res = await fetch(endpoint, { headers });
       let data = null;
       try {
         data = await res.json();
@@ -766,7 +849,9 @@ var DigiAdmin = (function() {
     resetPassphraseToDefault,
     togglePasswordVisibility,
     promptResetPassphrase,
-    getStoredPassphrase
+    getStoredPassphrase,
+    toggleBlobTokenVisibility,
+    addDirectBlobUrl
   };
 })();
 

@@ -22,22 +22,6 @@
 </head>
 <body oncontextmenu="return false;">
 
-  <!-- Top Notification & Server Indicator Bar -->
-  <div class="top-notice-bar">
-    <div class="container" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-      <div class="notice-text">
-        <span class="badge-gold">Academic Archive</span>
-        <span>Digital Book Library &bull; Rashtrasant Tukadoji Maharaj Nagpur University</span>
-      </div>
-      <div class="notice-links">
-        <div class="server-pill" id="serverStatusPill" style="cursor:default;" title="Digital Library System Status">
-          <div class="status-dot" id="serverStatusDot"></div>
-          <span id="serverStatusText">Online Archive</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- ==========================================================================
        SITE HEADER: Two Logos (Left: RTMNU Seal, Right: AIHC&A Seal), Center Title
        ========================================================================== -->
@@ -81,7 +65,11 @@
           <li><button class="nav-btn" onclick="DigiAdmin.openAdminModal()"><span>&#128274;</span> Librarian Portal</button></li>
         </ul>
 
-        <div class="nav-auth-section" id="userAuthStatus">
+        <div class="nav-auth-section" id="userAuthStatus" style="display:flex; align-items:center; gap:10px;">
+          <div class="server-pill" id="serverStatusPill" style="cursor:default;" title="Digital Library System Status">
+            <div class="status-dot" id="serverStatusDot"></div>
+            <span id="serverStatusText">Online Archive</span>
+          </div>
           <!-- Populated dynamically by auth.js -->
           <button onclick="DigiApp.openAuthModal()" class="nav-btn btn-primary">
             <span>&#128272;</span> Verify Email / Sign In
@@ -164,7 +152,7 @@
       
       <div class="section-header-row">
         <div>
-          <h2 class="section-title">Archival Research Manuscripts</h2>
+          <h2 class="section-title">Digital Library Collections</h2>
           <span style="font-size:0.86rem; color:var(--color-text-muted);" id="activeResultsCount">Loading collection...</span>
         </div>
 
@@ -645,10 +633,48 @@
                 </span>
               </div>
 
-              <div style="margin-top:14px; display:flex; justify-content:flex-end;">
+              <div style="margin-top:14px;">
+                <label class="form-label" for="adminBlobTokenInput">Vercel Blob Storage Token (<code>BLOB_READ_WRITE_TOKEN</code>)</label>
+                <div style="display:flex; gap:8px;">
+                  <input type="password" id="adminBlobTokenInput" class="form-control" placeholder="vercel_blob_rw_..." style="font-family:monospace; font-size:0.84rem;">
+                  <button type="button" class="nav-btn" onclick="DigiAdmin.toggleBlobTokenVisibility()" title="Show/Hide Token" style="padding:6px 12px;">👁️</button>
+                </div>
+                <span style="font-size:0.75rem; color:#888; margin-top:4px; display:block;">
+                  Found in Vercel Dashboard &rarr; Storage &rarr; [Your Blob Store] &rarr; Settings. Starts with <code>vercel_blob_rw_</code>.
+                </span>
+              </div>
+
+              <div style="margin-top:14px; display:flex; justify-content:flex-end; gap:8px;">
                 <button type="button" id="btnSaveAdminServer" class="search-btn" onclick="DigiAdmin.saveServerSettingsFromAdmin()">
                   Save &amp; Reconnect
                 </button>
+              </div>
+
+              <!-- Direct Vercel Blob URL / Link Importer -->
+              <div style="margin-top:18px; padding-top:16px; border-top:1px dashed var(--color-border);">
+                <strong style="color:var(--color-primary-dark); font-size:0.9rem;">🔗 Link Direct Vercel Blob / PDF URL</strong>
+                <p style="font-size:0.78rem; color:#666; margin:4px 0 10px 0;">
+                  Have a direct Vercel Blob URL from your Vercel Dashboard (e.g. <code>https://...public.blob.vercel-storage.com/book.pdf</code>)? Register it instantly into the library catalogue.
+                </p>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                  <input type="text" id="directBlobTitle" class="form-control" placeholder="Book / Manuscript Title" style="font-size:0.82rem;">
+                  <select id="directBlobCategory" class="form-control" style="font-size:0.82rem;">
+                    <option value="Archaeology & Excavations">Archaeology & Excavations</option>
+                    <option value="Ancient Indian History">Ancient Indian History</option>
+                    <option value="Epigraphy & Inscriptions">Epigraphy & Inscriptions</option>
+                    <option value="Numismatics & Ancient Coins">Numismatics & Ancient Coins</option>
+                    <option value="Temple Architecture & Iconography">Temple Architecture & Iconography</option>
+                    <option value="Prehistory & Indus Valley">Prehistory & Indus Valley</option>
+                    <option value="Heritage of Vidarbha & Central India">Heritage of Vidarbha & Central India</option>
+                    <option value="Sanskrit & Manuscripts">Sanskrit & Manuscripts</option>
+                  </select>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:8px;">
+                  <input type="url" id="directBlobUrl" class="form-control" placeholder="https://...public.blob.vercel-storage.com/... or relative path" style="font-size:0.82rem; font-family:monospace;">
+                  <button type="button" class="search-btn" style="white-space:nowrap; font-size:0.82rem; padding:6px 14px;" onclick="DigiAdmin.addDirectBlobUrl()">
+                    + Add to Library
+                  </button>
+                </div>
               </div>
 
               <!-- Vercel Blob Storage File Inspector -->

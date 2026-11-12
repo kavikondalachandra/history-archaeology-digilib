@@ -196,16 +196,36 @@ var DigiApp = (function() {
     if (countEl) countEl.textContent = `${books.length} Books Available`;
 
     if (books.length === 0) {
-      grid.innerHTML = `
-        <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: #FFFFFF; border-radius: var(--radius-md); border: 1px dashed var(--color-border);">
-          <div style="font-size: 3rem; color: var(--color-gold); margin-bottom: 12px;">&#128214;</div>
-          <h3 style="font-family: var(--font-heading); color: var(--color-primary-dark); margin-bottom: 8px;">No Research Volumes Matched</h3>
-          <p style="color: var(--color-text-muted); max-width: 440px; margin: 0 auto 18px auto;">
-            Try adjusting your search terms or selecting a different category filter from the options above.
-          </p>
-          <button onclick="DigiApp.resetFilters()" class="search-btn" style="display:inline-flex; margin:0 auto;">Reset Filters</button>
-        </div>
-      `;
+      if (allBooks.length === 0) {
+        grid.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: #FFFFFF; border-radius: var(--radius-md); border: 1px dashed var(--color-border);">
+            <div style="font-size: 3rem; color: var(--color-gold); margin-bottom: 12px;">&#128218;</div>
+            <h3 style="font-family: var(--font-heading); color: var(--color-primary-dark); margin-bottom: 8px;">Digital Library Ready</h3>
+            <p style="color: var(--color-text-muted); max-width: 520px; margin: 0 auto 18px auto; line-height: 1.6;">
+              Previous sample manuscripts have been cleared. Upload your research volumes via the Librarian Portal or connect your Vercel cloud repository.
+            </p>
+            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+              <button onclick="DigiAdmin.openAdminModal()" class="search-btn" style="display:inline-flex;">
+                &#128193; Upload Manuscript / Librarian Portal
+              </button>
+              <button onclick="DigiApp.loadBooks()" class="nav-btn" style="display:inline-flex;">
+                &#8634; Refresh Catalogue
+              </button>
+            </div>
+          </div>
+        `;
+      } else {
+        grid.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: #FFFFFF; border-radius: var(--radius-md); border: 1px dashed var(--color-border);">
+            <div style="font-size: 3rem; color: var(--color-gold); margin-bottom: 12px;">&#128214;</div>
+            <h3 style="font-family: var(--font-heading); color: var(--color-primary-dark); margin-bottom: 8px;">No Research Volumes in this Category</h3>
+            <p style="color: var(--color-text-muted); max-width: 440px; margin: 0 auto 18px auto;">
+              No books currently match this category or search filter.
+            </p>
+            <button onclick="DigiApp.resetFilters()" class="search-btn" style="display:inline-flex; margin:0 auto;">Reset Filters</button>
+          </div>
+        `;
+      }
       return;
     }
 

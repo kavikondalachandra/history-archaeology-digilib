@@ -15,9 +15,19 @@ var DigiSecurity = (function() {
   let dirX = 1.2;
   let dirY = 0.8;
 
+  function isLibrarianOrInputField(target) {
+    if (!target) return false;
+    if (target.closest && target.closest('#adminModal')) return true;
+    const tag = (target.tagName || '').toUpperCase();
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+  }
+
   function init() {
-    // 1. Disable Right Click Context Menu
+    // 1. Disable Right Click Context Menu (allowed inside Librarian Portal and form fields)
     document.addEventListener('contextmenu', function(e) {
+      if (isLibrarianOrInputField(e.target)) {
+        return true;
+      }
       e.preventDefault();
       showToast('Manuscript Protected: Right-click is restricted by University Archival Policy.');
       return false;
@@ -25,19 +35,29 @@ var DigiSecurity = (function() {
 
     // 2. Disable Keyboard Shortcuts: Print, Save, Inspect, PrintScreen, Copy, Paste, Cut
     document.addEventListener('keydown', function(e) {
-      // Ctrl+C or Cmd+C (Copy)
+      const isAllowedArea = isLibrarianOrInputField(e.target);
+
+      // In Librarian Portal or form fields, enable standard copy, paste, cut, select all
+      if (isAllowedArea && (e.ctrlKey || e.metaKey)) {
+        const k = (e.key || '').toLowerCase();
+        if (k === 'c' || k === 'v' || k === 'x' || k === 'a') {
+          return true;
+        }
+      }
+
+      // Ctrl+C or Cmd+C (Copy) - restricted for readers/dashboard
       if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
         e.preventDefault();
         showToast('Copying content is disabled for digital archive preservation.');
         return false;
       }
-      // Ctrl+V or Cmd+V (Paste)
+      // Ctrl+V or Cmd+V (Paste) - restricted outside inputs
       if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
         e.preventDefault();
         showToast('Pasting is disabled by University Archival Security Policy.');
         return false;
       }
-      // Ctrl+X or Cmd+X (Cut)
+      // Ctrl+X or Cmd+X (Cut) - restricted outside inputs
       if ((e.ctrlKey || e.metaKey) && (e.key === 'x' || e.key === 'X')) {
         e.preventDefault();
         showToast('Cut action is disabled by University Archival Security Policy.');
@@ -45,8 +65,7 @@ var DigiSecurity = (function() {
       }
       // Ctrl+A or Cmd+A (Select All outside form inputs)
       if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
-        const isInputField = e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA');
-        if (!isInputField) {
+        if (!isAllowedArea) {
           e.preventDefault();
           return false;
         }
@@ -82,26 +101,38 @@ var DigiSecurity = (function() {
       }
     });
 
-    // 3. Disable Clipboard Copy, Paste, and Cut Events
+    // 3. Disable Clipboard Copy, Paste, and Cut Events (permitted in Librarian Portal and inputs)
     document.addEventListener('copy', function(e) {
+      if (isLibrarianOrInputField(e.target)) {
+        return true;
+      }
       e.preventDefault();
       showToast('Copying content is disabled for digital archive preservation.');
       return false;
     });
 
     document.addEventListener('paste', function(e) {
+      if (isLibrarianOrInputField(e.target)) {
+        return true;
+      }
       e.preventDefault();
       showToast('Pasting is disabled by University Archival Security Policy.');
       return false;
     });
 
     document.addEventListener('cut', function(e) {
+      if (isLibrarianOrInputField(e.target)) {
+        return true;
+      }
       e.preventDefault();
       return false;
     });
 
     // 4. Disable Text Drag & Select in protected elements
     document.addEventListener('dragstart', function(e) {
+      if (isLibrarianOrInputField(e.target)) {
+        return true;
+      }
       if (e.target.closest('.reader-modal') || e.target.closest('.book-card')) {
         e.preventDefault();
       }

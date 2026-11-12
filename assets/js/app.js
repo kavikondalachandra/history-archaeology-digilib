@@ -70,35 +70,64 @@ var DigiApp = (function() {
     updateStats();
   }
 
+  const ACADEMIC_CATEGORIES = [
+    'Archaeology & Excavations',
+    'Ancient Indian History',
+    'Epigraphy & Inscriptions',
+    'Numismatics & Ancient Coins',
+    'Temple Architecture & Iconography',
+    'Prehistory & Indus Valley',
+    'Heritage of Vidarbha & Central India',
+    'Sanskrit & Manuscripts'
+  ];
+
   // Render Categories Filter Pills
   function renderCategories() {
     const container = document.getElementById('categoryScrollContainer');
     if (!container) return;
 
     const categoriesMap = { 'all': allBooks.length };
-    for (const b of allBooks) {
-      const cat = b.category || 'General';
-      categoriesMap[cat] = (categoriesMap[cat] || 0) + 1;
+    for (const cat of ACADEMIC_CATEGORIES) {
+      categoriesMap[cat] = 0;
     }
 
-    const categories = Object.keys(categoriesMap);
+    for (const b of allBooks) {
+      const rawCat = (b.category || '').trim() || 'General';
+      // Find matching standard category or record custom
+      const matchedStd = ACADEMIC_CATEGORIES.find(c => c.toLowerCase() === rawCat.toLowerCase());
+      const catKey = matchedStd || rawCat;
+      categoriesMap[catKey] = (categoriesMap[catKey] || 0) + 1;
+    }
 
-    container.innerHTML = categories.map(cat => {
+    // Build ordered list of categories: 'all', then standard categories, then custom
+    const customCats = Object.keys(categoriesMap).filter(c => c !== 'all' && !ACADEMIC_CATEGORIES.includes(c));
+    const allCatKeys = ['all', ...ACADEMIC_CATEGORIES, ...customCats];
+
+    container.innerHTML = allCatKeys.map(cat => {
       const label = cat === 'all' ? 'All Collections' : cat;
-      const count = categoriesMap[cat];
-      const isActive = currentCategory === cat ? 'active' : '';
+      const count = categoriesMap[cat] || 0;
+      const isActive = currentCategory.toLowerCase() === cat.toLowerCase() ? 'active' : '';
       return `
-        <button class="cat-pill ${isActive}" onclick="DigiApp.setCategory('${escapeAttr(cat)}')">
+        <button type="button" class="cat-pill ${isActive}" data-cat="${escapeHtml(cat)}">
           <span>${escapeHtml(label)}</span>
           <span class="cat-count">${count}</span>
         </button>
       `;
     }).join('');
+
+    // Attach click handlers cleanly
+    container.querySelectorAll('.cat-pill').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const cat = this.getAttribute('data-cat');
+        setCategory(cat);
+      });
+    });
   }
 
   // Set Category
   function setCategory(cat) {
-    currentCategory = cat;
+    currentCategory = cat || 'all';
     renderCategories();
     renderBooks();
   }
@@ -107,9 +136,13 @@ var DigiApp = (function() {
   function getFilteredBooks() {
     let filtered = [...allBooks];
 
-    // Category filter
-    if (currentCategory !== 'all') {
-      filtered = filtered.filter(b => b.category === currentCategory);
+    // Category filter (flexible matching)
+    if (currentCategory && currentCategory !== 'all') {
+      const targetCat = currentCategory.trim().toLowerCase();
+      filtered = filtered.filter(b => {
+        const bookCat = (b.category || '').trim().toLowerCase();
+        return bookCat === targetCat || bookCat.includes(targetCat) || targetCat.includes(bookCat);
+      });
     }
 
     // Format filter

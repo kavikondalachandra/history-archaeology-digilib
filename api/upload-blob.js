@@ -14,13 +14,23 @@ export const config = {
 };
 
 export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed. Use POST.' });
   }
 
   // Check if Vercel Blob is connected
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return res.status(400).json({
+    return res.status(200).json({
+      success: false,
+      storageStatus: 'not_connected',
       error: 'Vercel Blob Storage is not connected yet.',
       message: 'Go to your Vercel Dashboard -> Storage -> Create Blob Database, and link it to this project.'
     });

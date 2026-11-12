@@ -259,12 +259,27 @@ var DigiAdmin = (function() {
 
       if (data.storageStatus === 'not_connected') {
         listContainer.innerHTML = `
-          <div style="background:#FFF3CD; border:1px solid #FFEBAA; color:#856404; padding:12px; border-radius:6px; font-size:0.85rem;">
-            <strong>⚠️ Vercel Blob Storage Not Connected:</strong><br>
-            ${escapeHtml(data.message)}<br>
-            <a href="https://vercel.com/dashboard" target="_blank" rel="noopener" style="color:#0056b3; text-decoration:underline; font-weight:600; display:inline-block; margin-top:6px;">
-              Open Vercel Dashboard → Storage ↗
-            </a>
+          <div style="background:#FFF9E6; border:1px solid #FFE082; color:#5D4037; padding:16px; border-radius:6px; font-size:0.86rem; line-height:1.6;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+              <span style="font-size:1.3rem;">⚠️</span>
+              <strong style="color:#C0392B; font-size:0.95rem;">Vercel Blob Storage Not Connected to Project</strong>
+            </div>
+            <p style="margin:0 0 10px 0; color:#555;">
+              To enable permanent Vercel Blob cloud CDN storage for your manuscripts, follow these 3 quick steps in your Vercel project:
+            </p>
+            <ol style="margin:0 0 12px 22px; padding:0; line-height:1.7;">
+              <li>Open your <a href="https://vercel.com/dashboard" target="_blank" rel="noopener" style="color:#0056b3; font-weight:700; text-decoration:underline;">Vercel Dashboard ↗</a> and select your project (<strong>history-archaeology-digilib</strong>).</li>
+              <li>Click the <strong>Storage</strong> tab at the top &rarr; click <strong>Create Database</strong> &rarr; choose <strong>Blob</strong> &rarr; click <strong>Link to Project</strong>.</li>
+              <li><strong>Crucial step:</strong> After linking, go to the <strong>Deployments</strong> tab in Vercel, click <strong>&hellip;</strong> on the latest deployment, and click <strong>Redeploy</strong> (so Vercel injects the storage token).</li>
+            </ol>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding-top:8px; border-top:1px dashed #FFE082;">
+              <button type="button" class="search-btn" style="font-size:0.8rem; padding:6px 14px;" onclick="DigiAdmin.inspectVercelBlobs()">
+                &#8634; Check Connection Again
+              </button>
+              <span style="font-size:0.78rem; color:#777;">
+                Books you upload are always saved and immediately visible under their category tabs!
+              </span>
+            </div>
           </div>
         `;
         return;
@@ -468,17 +483,29 @@ var DigiAdmin = (function() {
     }
 
     try {
-      await DigiStorage.addBook(bookPayload);
-      alert('Success! The manuscript has been added to the Digital Library catalogue.');
+      const res = await DigiStorage.addBook(bookPayload);
+      
+      const successMsg = (res && res.cloudSynced)
+        ? `Success! "${title}" has been uploaded to Vercel Cloud Storage and added under the "${category}" tab.`
+        : `Success! "${title}" has been added to the Digital Library under the "${category}" tab!\n\n(It is immediately visible in the "${category}" tab and "All Collections").`;
+
+      alert(successMsg);
 
       // Reset form
       document.getElementById('addBookForm').reset();
       stagedFile = null;
-      document.querySelector('.dropzone-title').textContent = 'Drag & Drop Research File or Click to Browse';
+      const dropzoneTitle = document.querySelector('.dropzone-title');
+      if (dropzoneTitle) {
+        dropzoneTitle.textContent = 'Drag & Drop Research File or Click to Browse';
+      }
 
-      // Refresh main grid
-      DigiApp.loadBooks();
-      renderBookList();
+      // Refresh main grid and active categories
+      await DigiApp.loadBooks();
+      await renderBookList();
+
+      if (typeof window !== 'undefined' && window.DigiSecurity) {
+        window.DigiSecurity.showToast(`Manuscript added under "${category}" tab!`);
+      }
     } catch (err) {
       alert('Error adding book: ' + err.message);
     } finally {

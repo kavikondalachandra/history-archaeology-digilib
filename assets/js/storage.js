@@ -266,43 +266,64 @@ var DigiStorage = (function() {
 
   // Add a newly uploaded book
   async function addBook(bookData) {
-    if (isServerConnected) {
-      const resp = await fetch(`${currentServerUrl}/api/books/upload`, {
+    const bookId = bookData.id || ('book-' + Date.now());
+    let cloudUrl = null;
+    let cloudSuccess = false;
+
+    // 1. Try uploading to backend / Vercel Blob if available
+    try {
+      const serverUrl = currentServerUrl || '';
+      let targetEndpoint = '/api/upload-blob';
+      if (serverUrl && !serverUrl.includes('github.io')) {
+        targetEndpoint = `${serverUrl.replace(/\/+$/, '')}/api/upload-blob`;
+      }
+
+      const resp = await fetch(targetEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bookData)
       });
-      return await resp.json();
-    } else {
-      // Check if Vercel Blob endpoint is available
-      try {
-        const vercelBlobResp = await fetch('/api/upload-blob', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(bookData)
-        });
-        if (vercelBlobResp.ok) {
-          const blobRes = await vercelBlobResp.json();
-          if (blobRes.success && blobRes.url) {
-            bookData.filePath = blobRes.url;
-            console.log('[DigiLib] Book saved to Vercel Blob Storage:', blobRes.url);
-          }
-        }
-      } catch (e) {}
 
-      // Save in browser storage and offer export for GitHub repository
-      const localCustom = JSON.parse(localStorage.getItem(BOOKS_CACHE_KEY) || '[]');
-      const newBook = {
-        ...bookData,
-        id: 'book-' + Date.now(),
-        downloads: 0,
-        reads: 0,
-        featured: false
-      };
-      localCustom.unshift(newBook);
-      localStorage.setItem(BOOKS_CACHE_KEY, JSON.stringify(localCustom));
-      return { success: true, book: newBook, clientSaved: true };
+      if (resp.ok) {
+        const resData = await resp.json();
+        if (resData.success && (resData.url || (resData.bookMetadata && resData.bookMetadata.filePath))) {
+          cloudUrl = resData.url || resData.bookMetadata.filePath;
+          cloudSuccess = true;
+          console.log('[DigiLib] Book saved to Vercel Blob Storage:', cloudUrl);
+        } else if (resData.storageStatus === 'not_connected') {
+          console.warn('[DigiLib] Vercel Blob not connected yet. Saved locally.');
+        }
+      }
+    } catch (e) {
+      console.warn('[DigiLib] Cloud storage upload skipped/offline. Storing in library archive:', e);
     }
+
+    // 2. Prepare the complete book object
+    const newBook = {
+      ...bookData,
+      id: bookId,
+      filePath: cloudUrl || bookData.fileBase64 || bookData.filePath || `data/books/${bookData.filename || 'manuscript.pdf'}`,
+      downloads: 0,
+      reads: 0,
+      featured: false,
+      cloudSynced: cloudSuccess
+    };
+
+    // 3. ALWAYS store in browser storage cache so it appears immediately on site & across tabs
+    try {
+      const localCustom = JSON.parse(localStorage.getItem(BOOKS_CACHE_KEY) || '[]');
+      const filtered = localCustom.filter(b => b.id !== bookId && b.title !== newBook.title);
+      filtered.unshift(newBook);
+      localStorage.setItem(BOOKS_CACHE_KEY, JSON.stringify(filtered));
+    } catch (e) {
+      console.error('[DigiLib] LocalStorage write error:', e);
+    }
+
+    return {
+      success: true,
+      book: newBook,
+      cloudSynced: cloudSuccess
+    };
   }
 
   // Download Quota Enforcement: Check if user is eligible for today's 1 download

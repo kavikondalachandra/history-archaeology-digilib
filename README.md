@@ -2,7 +2,7 @@
 
 ### Department of Ancient Indian History, Culture & Archaeology
 **Rashtrasant Tukadoji Maharaj Nagpur University, Nagpur**  
-*Motto: &ldquo;विद्या परं दैवतम्&rdquo; (Knowledge is the Supreme Deity) &bull; Estd. 1923*
+*Motto: &ldquo;विद्या परं दैवतम्&rdquo; (Knowledge is the Supreme Deity)*
 
 ---
 

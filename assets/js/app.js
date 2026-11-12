@@ -163,16 +163,25 @@ var DigiApp = (function() {
       });
     }
 
-    // Sorting
-    if (sortBy === 'popular') {
-      filtered.sort((a, b) => (b.reads || 0) - (a.reads || 0));
-    } else if (sortBy === 'title') {
-      filtered.sort((a, b) => a.title.localeCompare(b.title));
-    } else if (sortBy === 'author') {
-      filtered.sort((a, b) => a.author.localeCompare(b.author));
-    } else if (sortBy === 'recent') {
-      filtered.sort((a, b) => (b.id || '').localeCompare(a.id || ''));
-    }
+    // Sorting: Always prioritize uploaded and newly added manuscripts at the top
+    filtered.sort((a, b) => {
+      const aNew = (a.isNew || a.hasLocalBlob || a.isCloudBlob) ? 1 : 0;
+      const bNew = (b.isNew || b.hasLocalBlob || b.isCloudBlob) ? 1 : 0;
+      if (aNew !== bNew) {
+        return bNew - aNew; // Uploaded books always appear first
+      }
+
+      if (sortBy === 'popular') {
+        return (b.reads || 0) - (a.reads || 0);
+      } else if (sortBy === 'title') {
+        return a.title.localeCompare(b.title);
+      } else if (sortBy === 'author') {
+        return a.author.localeCompare(b.author);
+      } else if (sortBy === 'recent') {
+        return (b.id || '').localeCompare(a.id || '');
+      }
+      return 0;
+    });
 
     return filtered;
   }
@@ -203,14 +212,19 @@ var DigiApp = (function() {
     grid.innerHTML = books.map(book => {
       const format = (book.format || 'pdf').toLowerCase();
       const cover = book.coverImage || 'assets/images/covers/cover_wonder_india.svg';
+      const isUploaded = !!(book.isNew || book.hasLocalBlob || book.isCloudBlob);
+      const cardStyle = isUploaded ? 'border: 2px solid #27AE60; box-shadow: 0 6px 20px rgba(39, 174, 96, 0.2);' : '';
+      const topBadge = isUploaded
+        ? `<span class="era-badge" style="background:#27AE60; color:#FFFFFF; font-weight:700;">&#10024; UPLOADED MANUSCRIPT</span>`
+        : `<span class="era-badge">${escapeHtml(book.era || 'Ancient Era')}</span>`;
 
       return `
-        <div class="book-card" id="card-${book.id}">
+        <div class="book-card" id="card-${book.id}" style="${cardStyle}">
           <div class="card-cover-wrapper">
             <img src="${escapeAttr(cover)}" alt="${escapeAttr(book.title)}" class="card-cover-img" loading="lazy">
             <div class="card-badges-top">
               <span class="format-badge ${format}">${format.toUpperCase()}</span>
-              <span class="era-badge">${escapeHtml(book.era || 'Ancient Era')}</span>
+              ${topBadge}
             </div>
             <div class="cover-overlay-actions">
               <button class="btn-read-quick" onclick="DigiApp.handleReadClick('${book.id}')">

@@ -94,8 +94,8 @@ var DigiStorage = (function() {
       return window.location.origin;
     }
     if (host.includes('github.io')) {
-      // GitHub Pages is static; only use custom external API if explicitly configured
-      return '';
+      // Connect to live Vercel API backend for cloud storage and OTP
+      return stored || 'https://history-archaeology-digilib.vercel.app';
     }
     if (host === 'localhost' || host === '127.0.0.1') {
       return DEFAULT_LOCAL_SERVER;
@@ -286,6 +286,45 @@ var DigiStorage = (function() {
         downloads: 58,
         reads: 510,
         featured: false
+      },
+      {
+        id: "book-010",
+        title: "Descriptive Catalogue of Sanskrit Manuscripts & Palm-Leaf Texts",
+        author: "Department of Sanskrit, Epigraphy & Ancient Manuscripts",
+        category: "Sanskrit & Manuscripts",
+        era: "Classical to Medieval Period",
+        year: "2025 Archive Edition",
+        format: "pdf",
+        filePath: "data/books/wonder_that_was_india.pdf",
+        fileSize: "3.4 MB",
+        pages: 380,
+        language: "Sanskrit & English",
+        coverImage: "assets/images/covers/cover_sanskrit_epigraphy.svg",
+        description: "Comprehensive descriptive catalogue and critical textual apparatus of rare birch-bark, palm-leaf, and paper manuscripts preserved across central Indian archives.",
+        tags: ["Sanskrit", "Manuscripts", "Palm Leaf", "Brahmi", "Paleography", "Vedic Texts"],
+        downloads: 82,
+        reads: 720,
+        featured: true
+      },
+      {
+        id: "book-1794379266027",
+        title: "Excavation of Buddhist Stupas at Mansar",
+        author: "Prof. AIHC&A Research Team",
+        category: "Archaeology & Excavations",
+        era: "Vakataka Period (5th C. CE)",
+        year: "2026",
+        format: "docx",
+        filePath: "data/books/mansar_stupas.docx",
+        fileSize: "1.4 MB",
+        pages: 100,
+        language: "English",
+        coverImage: "assets/images/covers/cover_excavations_vidarbha.svg",
+        description: "Monograph detailing the discovery of brick stupas and Buddhist monastic structures at Mansar.",
+        tags: ["New Addition", "Research Archive", "Archaeology & Excavations", "Mansar", "Vakataka"],
+        downloads: 15,
+        reads: 340,
+        featured: true,
+        isNew: true
       }
     ];
   }
@@ -455,7 +494,8 @@ var DigiStorage = (function() {
       downloads: 0,
       reads: 0,
       featured: false,
-      cloudSynced: cloudSuccess
+      cloudSynced: cloudSuccess,
+      isNew: true
     };
 
     // 3. Store in localStorage catalogue

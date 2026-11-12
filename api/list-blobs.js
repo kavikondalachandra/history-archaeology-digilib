@@ -3,6 +3,21 @@
  * Returns real-time list of all PDF, DOC, and DOCX files stored on Vercel CDN.
  */
 
+function extractBlobToken() {
+  const candidates = [
+    process.env.BLOB_READ_WRITE_TOKEN,
+    process.env.VERCEL_BLOB_READ_WRITE_TOKEN,
+    process.env.STORE_READ_WRITE_TOKEN
+  ];
+  for (const raw of candidates) {
+    if (typeof raw === 'string') {
+      const match = raw.match(/vercel_blob_rw_[a-zA-Z0-9_-]+/);
+      if (match) return match[0];
+    }
+  }
+  return null;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -12,11 +27,10 @@ export default async function handler(req, res) {
     return res.status(204).end();
   }
 
-  const rawToken = process.env.BLOB_READ_WRITE_TOKEN || '';
-  const cleanToken = rawToken.trim().replace(/^["']|["']$/g, '').trim();
+  const validToken = extractBlobToken();
 
-  // If token is missing, or is a Store ID (store_... or BLOB_STORE_ID=...), operate smoothly in Universal Local Database mode
-  if (!cleanToken || !cleanToken.startsWith('vercel_blob_rw_')) {
+  // If token is missing, or is a Store ID, operate smoothly in Universal Local Database mode
+  if (!validToken) {
     return res.status(200).json({
       success: true,
       storageStatus: 'local_database_active',
@@ -28,10 +42,17 @@ export default async function handler(req, res) {
 
   try {
     const { list } = await import('@vercel/blob');
-    const response = await list({ prefix: 'books/', token: cleanToken });
-    const blobs = (response && response.blobs) || [];
+    // List all files in the blob store without restricting to prefix
+    const response = await list({ token: validToken });
+    const allBlobs = (response && response.blobs) || [];
 
-    const formattedBlobs = blobs.map(b => ({
+    // Filter only document formats (PDF, DOCX, DOC)
+    const docBlobs = allBlobs.filter(b => {
+      const p = (b.pathname || '').toLowerCase();
+      return p.endsWith('.pdf') || p.endsWith('.docx') || p.endsWith('.doc');
+    });
+
+    const formattedBlobs = docBlobs.map(b => ({
       pathname: b.pathname,
       filename: b.pathname.replace(/^books\//, ''),
       url: b.url,

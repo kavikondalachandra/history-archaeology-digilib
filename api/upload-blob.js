@@ -11,6 +11,21 @@ export const config = {
   }
 };
 
+function extractBlobToken() {
+  const candidates = [
+    process.env.BLOB_READ_WRITE_TOKEN,
+    process.env.VERCEL_BLOB_READ_WRITE_TOKEN,
+    process.env.STORE_READ_WRITE_TOKEN
+  ];
+  for (const raw of candidates) {
+    if (typeof raw === 'string') {
+      const match = raw.match(/vercel_blob_rw_[a-zA-Z0-9_-]+/);
+      if (match) return match[0];
+    }
+  }
+  return null;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -24,8 +39,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed. Use POST.' });
   }
 
-  const rawToken = process.env.BLOB_READ_WRITE_TOKEN || '';
-  const cleanToken = rawToken.trim().replace(/^["']|["']$/g, '').trim();
+  const validToken = extractBlobToken();
 
   try {
     const { filename, fileBase64, title, author, category, era, format } = req.body || {};
@@ -48,13 +62,13 @@ export default async function handler(req, res) {
     }
 
     // If a valid Vercel Blob token is present, upload to CDN; otherwise, complete smoothly in local archive mode
-    if (cleanToken.startsWith('vercel_blob_rw_')) {
+    if (validToken) {
       try {
         const { put } = await import('@vercel/blob');
         const blob = await put(`books/${filename}`, buffer, {
           access: 'public',
           contentType: contentType,
-          token: cleanToken
+          token: validToken
         });
 
         return res.status(200).json({

@@ -3,6 +3,24 @@
    Upload & Database Management Portal
    ========================================================================== */
 
+#adminModal,
+#adminModal *,
+.admin-card,
+.admin-card * {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -ms-user-select: text !important;
+}
+
+#adminModal input,
+#adminModal textarea,
+#adminModal select {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -ms-user-select: text !important;
+  cursor: text !important;
+}
+
 .admin-card {
   max-width: 860px !important;
   max-height: calc(100vh - 36px) !important;

@@ -16,13 +16,56 @@ var DigiSecurity = (function() {
   let dirY = 0.8;
 
   function isLibrarianOrInputField(target) {
-    if (!target) return false;
-    if (target.closest && target.closest('#adminModal')) return true;
-    const tag = (target.tagName || '').toUpperCase();
-    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+    // 1. If Librarian Portal modal is active, allow 100% unrestricted copy, paste, and context menu
+    const adminModal = document.getElementById('adminModal');
+    if (adminModal && adminModal.classList.contains('active')) {
+      return true;
+    }
+
+    // 2. If target is inside Librarian Portal
+    if (target && target.closest && target.closest('#adminModal')) {
+      return true;
+    }
+
+    // 3. If target or currently focused active element is an input, textarea, select, or contenteditable
+    const el = target || document.activeElement;
+    if (el) {
+      if (el.closest && el.closest('#adminModal')) return true;
+      const tag = (el.tagName || '').toUpperCase();
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable) {
+        return true;
+      }
+    }
+
+    if (document.activeElement) {
+      const activeTag = (document.activeElement.tagName || '').toUpperCase();
+      if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT' || document.activeElement.isContentEditable) {
+        return true;
+      }
+      if (document.activeElement.closest && document.activeElement.closest('#adminModal')) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   function init() {
+    // Stop propagation on Librarian Portal so native browser events are never intercepted
+    const adminModal = document.getElementById('adminModal');
+    if (adminModal) {
+      ['copy', 'paste', 'cut', 'contextmenu'].forEach(eventType => {
+        adminModal.addEventListener(eventType, function(e) {
+          e.stopPropagation();
+        }, true);
+      });
+      adminModal.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && ['c', 'v', 'x', 'a', 'C', 'V', 'X', 'A'].includes(e.key)) {
+          e.stopPropagation();
+        }
+      }, true);
+    }
+
     // 1. Disable Right Click Context Menu (allowed inside Librarian Portal and form fields)
     document.addEventListener('contextmenu', function(e) {
       if (isLibrarianOrInputField(e.target)) {

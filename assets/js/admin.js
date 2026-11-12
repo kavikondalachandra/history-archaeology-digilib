@@ -580,13 +580,19 @@ var DigiAdmin = (function() {
   }
 
   // Delete book from local cache
-  function deleteBook(bookId) {
+  async function deleteBook(bookId) {
     if (!confirm('Are you sure you want to remove this book from the catalogue?')) return;
     const localCustom = JSON.parse(localStorage.getItem('digilib_cached_books') || '[]');
     const filtered = localCustom.filter(b => b.id !== bookId);
     localStorage.setItem('digilib_cached_books', JSON.stringify(filtered));
-    DigiApp.loadBooks();
-    renderBookList();
+    if (typeof window !== 'undefined' && window.DigiStorage && window.DigiStorage.deleteFileFromIDB) {
+      try { await window.DigiStorage.deleteFileFromIDB(bookId); } catch(e) {}
+    }
+    await DigiApp.loadBooks();
+    await renderBookList();
+    if (typeof window !== 'undefined' && window.DigiSecurity) {
+      window.DigiSecurity.showToast('Book removed from library catalogue.');
+    }
   }
 
   // Export updated books.json for committing to GitHub

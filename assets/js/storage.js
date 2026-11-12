@@ -67,6 +67,22 @@ var DigiStorage = (function() {
     }
   }
 
+  async function deleteFileFromIDB(bookId) {
+    try {
+      const db = await openIDB();
+      if (!db) return false;
+      return new Promise((resolve) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        const store = tx.objectStore(IDB_STORE);
+        store.delete(bookId);
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => resolve(false);
+      });
+    } catch(e) {
+      return false;
+    }
+  }
+
   // Smart server detection based on hosting environment
   function getInitialServerUrl() {
     if (typeof window === 'undefined' || !window.location) return DEFAULT_LOCAL_SERVER;
@@ -453,7 +469,8 @@ var DigiStorage = (function() {
     isConnected,
     getServerInfo,
     saveFileToIDB,
-    getFileFromIDB
+    getFileFromIDB,
+    deleteFileFromIDB
   };
 })();
 

@@ -202,21 +202,9 @@
             <img src="assets/images/dept_archaeology_logo.jpg" alt="AIHC&A Logo" class="footer-logo-thumb">
           </div>
           <h3 class="footer-heading">Department of Ancient Indian History, Culture &amp; Archaeology</h3>
-          <p class="footer-text">
-            Rashtrasant Tukadoji Maharaj Nagpur University (founded in 1923) has spearheaded pioneering archaeological excavations across central India, uncovering megalithic iron smelting at Naikund, ancient trade routes, and Vakataka monumental art at Mansar and Ramtek.
-          </p>
-        </div>
-
-        <!-- Quick Links -->
-        <div>
-          <h3 class="footer-heading">Research Domains</h3>
-          <ul class="footer-links-list">
-            <li><a href="#" onclick="DigiApp.setCategory('Archaeology & Excavations')">&#9656; Megaliths of Vidarbha</a></li>
-            <li><a href="#" onclick="DigiApp.setCategory('Epigraphy & Inscriptions')">&#9656; Ashokan Epigraphy & Brahmi</a></li>
-            <li><a href="#" onclick="DigiApp.setCategory('Numismatics & Ancient Coins')">&#9656; Ancient Indian Numismatics</a></li>
-            <li><a href="#" onclick="DigiApp.setCategory('Temple Architecture & Iconography')">&#9656; Vakataka Temple Art</a></li>
-            <li><a href="#" onclick="DigiApp.setCategory('Prehistory & Indus Valley')">&#9656; Harappan Civilizations</a></li>
-          </ul>
+          <div style="font-size:0.95rem; color:#D6CBC7; font-family:var(--font-heading); margin-top:4px;">
+            Rashtrasant Tukadoji Maharaj Nagpur University, Nagpur
+          </div>
         </div>
 
         <!-- Mandatory Concept & Design Credits -->
@@ -650,6 +638,28 @@
                 <button type="button" id="btnSaveAdminServer" class="search-btn" onclick="DigiAdmin.saveServerSettingsFromAdmin()">
                   Save &amp; Reconnect
                 </button>
+              </div>
+
+              <!-- Vercel Blob Storage File Inspector -->
+              <div style="margin-top:18px; padding-top:16px; border-top:1px dashed var(--color-border);">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                  <div>
+                    <strong style="color:var(--color-primary-dark); font-size:0.9rem;">&#128193; Uploaded Books in Vercel Cloud Storage</strong>
+                    <div style="font-size:0.78rem; color:#666; margin-top:2px;">
+                      View live manuscripts stored on your Vercel Blob global CDN.
+                    </div>
+                  </div>
+                  <div style="display:flex; gap:8px; align-items:center;">
+                    <a href="https://vercel.com/dashboard" target="_blank" rel="noopener" class="nav-btn" style="font-size:0.8rem; padding:6px 12px; text-decoration:none;" title="Open Vercel Storage Dashboard in new tab">
+                      Vercel Console &#8599;
+                    </a>
+                    <button type="button" id="btnInspectBlobs" class="search-btn" style="font-size:0.82rem; padding:6px 14px;" onclick="DigiAdmin.inspectVercelBlobs()">
+                      Check Uploaded Files
+                    </button>
+                  </div>
+                </div>
+
+                <div id="adminVercelBlobList" style="margin-top:12px; display:none;"></div>
               </div>
             </div>
 

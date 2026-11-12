@@ -890,8 +890,8 @@ body {
 .footer-top-row {
   padding: 44px 0 28px 0;
   display: grid;
-  grid-template-columns: 2fr 1fr 1.5fr;
-  gap: 40px;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 48px;
 }
 
 .footer-col-about {

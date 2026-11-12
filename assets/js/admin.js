@@ -220,6 +220,129 @@ var DigiAdmin = (function() {
     }
   }
 
+  // Inspect files uploaded to Vercel Blob Storage
+  async function inspectVercelBlobs() {
+    const listContainer = document.getElementById('adminVercelBlobList');
+    const btn = document.getElementById('btnInspectBlobs');
+    if (!listContainer) return;
+
+    listContainer.style.display = 'block';
+    listContainer.innerHTML = '<div style="color:#666; font-size:0.86rem; padding:10px;">Connecting to Vercel Blob Storage...</div>';
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Inspecting...';
+    }
+
+    try {
+      const storage = (typeof window !== 'undefined') ? window.DigiStorage : null;
+      const serverUrl = storage ? (storage.getServerUrl() || '') : '';
+      let endpoint = '/api/list-blobs';
+
+      if (serverUrl && !serverUrl.includes('github.io')) {
+        endpoint = `${serverUrl.replace(/\/+$/, '')}/api/list-blobs`;
+      } else if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
+        if (!serverUrl) {
+          listContainer.innerHTML = `
+            <div style="background:#FFF3CD; border:1px solid #FFEBAA; color:#856404; padding:12px; border-radius:6px; font-size:0.85rem;">
+              <strong>ℹ️ Standalone GitHub Pages Mode:</strong><br>
+              Enter your live Vercel URL in the box above and click <em>Save &amp; Reconnect</em> to connect to your Vercel cloud storage.<br>
+              You can also view your files directly on the <a href="https://vercel.com/dashboard" target="_blank" rel="noopener" style="color:#0056b3; text-decoration:underline; font-weight:600;">Vercel Storage Dashboard ↗</a>.
+            </div>
+          `;
+          return;
+        }
+      }
+
+      const res = await fetch(endpoint);
+      if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to reach Vercel API`);
+      const data = await res.json();
+
+      if (data.storageStatus === 'not_connected') {
+        listContainer.innerHTML = `
+          <div style="background:#FFF3CD; border:1px solid #FFEBAA; color:#856404; padding:12px; border-radius:6px; font-size:0.85rem;">
+            <strong>⚠️ Vercel Blob Storage Not Connected:</strong><br>
+            ${escapeHtml(data.message)}<br>
+            <a href="https://vercel.com/dashboard" target="_blank" rel="noopener" style="color:#0056b3; text-decoration:underline; font-weight:600; display:inline-block; margin-top:6px;">
+              Open Vercel Dashboard → Storage ↗
+            </a>
+          </div>
+        `;
+        return;
+      }
+
+      if (!data.blobs || data.blobs.length === 0) {
+        listContainer.innerHTML = `
+          <div style="background:#E8F4FD; border:1px solid #BEE5EB; color:#0C5460; padding:12px; border-radius:6px; font-size:0.85rem;">
+            <strong>☁️ Vercel Blob Storage is Connected &amp; Ready!</strong><br>
+            No manuscripts have been uploaded to Vercel Blob yet. Any manuscript you upload via the <em>Add New Manuscript</em> tab will be stored here permanently with global CDN access.
+            <div style="margin-top:8px;">
+              <a href="https://vercel.com/dashboard" target="_blank" rel="noopener" style="color:#0C5460; text-decoration:underline; font-weight:600;">
+                View Blob Console on Vercel Dashboard ↗
+              </a>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      let html = `
+        <div style="background:#FFFFFF; border:1px solid var(--color-border); border-radius:6px; padding:12px; font-size:0.85rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <strong style="color:var(--color-primary-dark);">${data.blobs.length} File(s) Stored in Vercel Blob</strong>
+            <a href="https://vercel.com/dashboard" target="_blank" rel="noopener" style="font-size:0.78rem; color:var(--color-primary); text-decoration:underline;">
+              Open Vercel Storage Dashboard ↗
+            </a>
+          </div>
+          <div style="max-height:220px; overflow-y:auto;">
+            <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+              <thead>
+                <tr style="border-bottom:1px solid #EEE; text-align:left; color:#666;">
+                  <th style="padding:6px;">File Name</th>
+                  <th style="padding:6px;">Size</th>
+                  <th style="padding:6px;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+      `;
+
+      for (const b of data.blobs) {
+        html += `
+          <tr style="border-bottom:1px solid #F0F0F0;">
+            <td style="padding:6px; font-weight:600; color:#333;">${escapeHtml(b.filename)}</td>
+            <td style="padding:6px; color:#666;">${escapeHtml(b.sizeFormatted || '')}</td>
+            <td style="padding:6px;">
+              <a href="${b.url}" target="_blank" rel="noopener" style="color:var(--color-primary); text-decoration:underline; font-weight:600;">
+                Open File ↗
+              </a>
+            </td>
+          </tr>
+        `;
+      }
+
+      html += `
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+
+      listContainer.innerHTML = html;
+
+    } catch (err) {
+      listContainer.innerHTML = `
+        <div style="background:#F8D7DA; border:1px solid #F5C6CB; color:#721C24; padding:12px; border-radius:6px; font-size:0.85rem;">
+          <strong>Error querying Vercel server:</strong> ${escapeHtml(err.message)}<br>
+          <span style="font-size:0.78rem; color:#555;">Make sure your Vercel Backend URL is saved and online. You can also view files directly on your <a href="https://vercel.com/dashboard" target="_blank" rel="noopener" style="color:#721C24; text-decoration:underline; font-weight:600;">Vercel Dashboard</a>.</span>
+        </div>
+      `;
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Check Uploaded Files';
+      }
+    }
+  }
+
   function setupDropzone() {
     const dropzone = document.getElementById('uploadDropzone');
     const fileInput = document.getElementById('adminFileInput');
@@ -556,6 +679,7 @@ var DigiAdmin = (function() {
     logoutAdmin,
     switchTab,
     saveServerSettingsFromAdmin,
+    inspectVercelBlobs,
     submitBookForm,
     renderBookList,
     deleteBook,

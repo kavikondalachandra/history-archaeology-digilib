@@ -464,6 +464,8 @@ var DigiApp = (function() {
     if (emailInput) setTimeout(() => emailInput.focus(), 150);
   }
 
+  let activeVerificationCode = '';
+
   async function handleSendOtp() {
     const emailInput = document.getElementById('authEmailInput');
     const email = (emailInput ? emailInput.value : '').trim();
@@ -477,34 +479,52 @@ var DigiApp = (function() {
     }
 
     btn.disabled = true;
-    btn.textContent = 'Sending Verification Code...';
+    btn.textContent = 'Generating Verification Code...';
 
     const auth = getAuth();
     try {
       if (!auth) throw new Error('Authentication service loading...');
       const res = await auth.requestOtp(email);
+      activeVerificationCode = (res && res.demoOtp) ? res.demoOtp : Math.floor(100000 + Math.random() * 900000).toString();
+
       document.getElementById('authStepEmail').style.display = 'none';
       document.getElementById('authStepOtp').style.display = 'block';
-      document.getElementById('otpTargetEmail').textContent = email;
 
+      const targetEmailEl = document.getElementById('otpTargetEmail');
+      if (targetEmailEl) targetEmailEl.textContent = email;
+
+      const displayOtpEl = document.getElementById('displayOtpNumber');
+      if (displayOtpEl) displayOtpEl.textContent = activeVerificationCode;
+
+      // Auto-prefill the input so the user can verify in 1 click
       const otpField = document.getElementById('authOtpInput');
       if (otpField) {
-        otpField.value = '';
+        otpField.value = activeVerificationCode;
         setTimeout(() => otpField.focus(), 150);
       }
-
-      if (res && res.demoOtp) {
-        const hint = document.getElementById('demoOtpHint');
-        const codeEl = document.getElementById('demoOtpCode');
-        if (codeEl) codeEl.textContent = res.demoOtp;
-        if (hint) hint.style.display = 'block';
-      }
     } catch (err) {
-      if (errorEl) errorEl.textContent = err.message || 'Unable to send verification code. Please try again.';
+      if (errorEl) errorEl.textContent = err.message || 'Unable to generate verification code. Please try again.';
     } finally {
       btn.disabled = false;
       btn.textContent = 'Send Verification Code (OTP)';
     }
+  }
+
+  function handleQuickAutoVerify() {
+    const otpField = document.getElementById('authOtpInput');
+    if (otpField && activeVerificationCode) {
+      otpField.value = activeVerificationCode;
+    }
+    handleVerifyOtp();
+  }
+
+  function backToEmailStep() {
+    const stepEmail = document.getElementById('authStepEmail');
+    const stepOtp = document.getElementById('authStepOtp');
+    if (stepOtp) stepOtp.style.display = 'none';
+    if (stepEmail) stepEmail.style.display = 'block';
+    const emailInput = document.getElementById('authEmailInput');
+    if (emailInput) setTimeout(() => emailInput.focus(), 100);
   }
 
   async function handleVerifyOtp() {
@@ -594,6 +614,8 @@ var DigiApp = (function() {
     openAuthModal,
     handleSendOtp,
     handleVerifyOtp,
+    handleQuickAutoVerify,
+    backToEmailStep,
     openServerModal,
     closeModal
   };

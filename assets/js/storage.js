@@ -321,7 +321,76 @@ var DigiStorage = (function() {
       books = getDefaultCatalogue();
     }
 
-    // 2. Merge with locally added custom books if in client/static mode
+    // 2. Query Vercel Blob Cloud Storage for any uploaded cloud manuscripts
+    try {
+      let blobEndpoint = '/api/list-blobs';
+      if (currentServerUrl && !currentServerUrl.includes('github.io')) {
+        blobEndpoint = `${currentServerUrl.replace(/\/+$/, '')}/api/list-blobs`;
+      }
+      const blobResp = await fetch(blobEndpoint, { cache: 'no-store' });
+      if (blobResp.ok) {
+        const blobData = await blobResp.json();
+        if (blobData && Array.isArray(blobData.blobs) && blobData.blobs.length > 0) {
+          const existingPaths = new Set(books.map(b => (b.filePath || '').toLowerCase()));
+          const existingTitles = new Set(books.map(b => (b.title || '').toLowerCase()));
+
+          for (const b of blobData.blobs) {
+            const rawFilename = b.filename || (b.pathname ? b.pathname.replace(/^books\//, '') : 'manuscript.pdf');
+            const cleanTitle = rawFilename
+              .replace(/\.[^/.]+$/, '')
+              .replace(/[-_]+/g, ' ')
+              .replace(/\b\w/g, l => l.toUpperCase());
+
+            if (!existingPaths.has((b.url || '').toLowerCase()) && !existingTitles.has(cleanTitle.toLowerCase())) {
+              const ext = rawFilename.split('.').pop().toLowerCase();
+              let inferredCat = 'Archaeology & Excavations';
+              const lowerName = rawFilename.toLowerCase();
+              if (lowerName.includes('coin') || lowerName.includes('numismatic')) inferredCat = 'Numismatics & Ancient Coins';
+              else if (lowerName.includes('inscript') || lowerName.includes('epigraph') || lowerName.includes('brahmi')) inferredCat = 'Epigraphy & Inscriptions';
+              else if (lowerName.includes('temple') || lowerName.includes('architect') || lowerName.includes('sculpture')) inferredCat = 'Temple Architecture & Iconography';
+              else if (lowerName.includes('harappa') || lowerName.includes('indus') || lowerName.includes('prehistory')) inferredCat = 'Prehistory & Indus Valley';
+              else if (lowerName.includes('vidarbha') || lowerName.includes('vakataka') || lowerName.includes('mansar') || lowerName.includes('nagpur')) inferredCat = 'Heritage of Vidarbha & Central India';
+              else if (lowerName.includes('sanskrit') || lowerName.includes('vedic') || lowerName.includes('manuscript')) inferredCat = 'Sanskrit & Manuscripts';
+              else if (lowerName.includes('history')) inferredCat = 'Ancient Indian History';
+
+              let cover = 'assets/images/covers/cover_wonder_india.svg';
+              if (inferredCat.includes('Excavation') || inferredCat.includes('Archaeology')) cover = 'assets/images/covers/cover_excavations_vidarbha.svg';
+              else if (inferredCat.includes('Coin') || inferredCat.includes('Numismatics')) cover = 'assets/images/covers/cover_coins_ancient_india.svg';
+              else if (inferredCat.includes('Inscription') || inferredCat.includes('Epigraphy')) cover = 'assets/images/covers/cover_inscriptions_ashoka.svg';
+              else if (inferredCat.includes('Temple') || inferredCat.includes('Architecture')) cover = 'assets/images/covers/cover_temple_architecture.svg';
+              else if (inferredCat.includes('Vidarbha')) cover = 'assets/images/covers/cover_vakataka_heritage.svg';
+              else if (inferredCat.includes('Prehistory') || inferredCat.includes('Indus')) cover = 'assets/images/covers/cover_indus_valley.svg';
+              else if (inferredCat.includes('Sanskrit')) cover = 'assets/images/covers/cover_sanskrit_epigraphy.svg';
+
+              books.unshift({
+                id: 'cloud-' + rawFilename.replace(/[^a-zA-Z0-9_-]/g, '_'),
+                title: cleanTitle,
+                author: 'Department Scholar / Contributor',
+                category: inferredCat,
+                era: 'Ancient Period',
+                year: new Date(b.uploadedAt || Date.now()).getFullYear().toString(),
+                format: ['pdf', 'docx', 'doc'].includes(ext) ? ext : 'pdf',
+                filePath: b.url,
+                fileSize: b.sizeFormatted || '2.0 MB',
+                pages: 120,
+                language: 'English',
+                coverImage: cover,
+                description: `Digital research manuscript stored on Vercel Cloud Storage (${rawFilename}). Available for unrestricted reading and academic download.`,
+                tags: [inferredCat, 'Vercel Cloud', 'Research Monograph'],
+                downloads: 0,
+                reads: 18,
+                featured: true,
+                isCloudBlob: true
+              });
+            }
+          }
+        }
+      }
+    } catch (blobErr) {
+      console.warn('[DigiLib] Cloud blob sync skipped:', blobErr);
+    }
+
+    // 3. Merge with locally added custom books if in client/static mode
     try {
       const localCustom = JSON.parse(localStorage.getItem(BOOKS_CACHE_KEY) || '[]');
       if (Array.isArray(localCustom) && localCustom.length > 0) {

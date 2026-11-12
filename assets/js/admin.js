@@ -526,8 +526,6 @@ var DigiAdmin = (function() {
         ? `Success! "${title}" has been uploaded to Vercel Cloud Storage and added under the "${category}" tab.`
         : `Success! "${title}" has been added to the Digital Library under the "${category}" tab!\n\n(It is immediately visible in the "${category}" tab and "All Collections").`;
 
-      alert(successMsg);
-
       // Reset form
       document.getElementById('addBookForm').reset();
       stagedFile = null;
@@ -536,15 +534,19 @@ var DigiAdmin = (function() {
         dropzoneTitle.textContent = 'Drag & Drop Research File or Click to Browse';
       }
 
-      // Refresh main grid and active categories
-      if (typeof window !== 'undefined' && window.DigiApp && window.DigiApp.loadBooks) {
-        await window.DigiApp.loadBooks();
+      // Close admin modal and navigate directly to the new book on the dashboard
+      if (typeof window !== 'undefined' && window.DigiApp) {
+        if (window.DigiApp.closeModal) window.DigiApp.closeModal('adminModal');
+        if (window.DigiApp.setCategory) window.DigiApp.setCategory(category);
+        if (window.DigiApp.loadBooks) await window.DigiApp.loadBooks();
       }
       await renderBookList();
 
       if (typeof window !== 'undefined' && window.DigiSecurity) {
-        window.DigiSecurity.showToast(`Manuscript added under "${category}" tab!`);
+        window.DigiSecurity.showToast(`Manuscript "${title}" added! Displayed under "${category}" tab.`);
       }
+
+      alert(successMsg);
     } catch (err) {
       alert('Error adding book: ' + err.message);
     } finally {
